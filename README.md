@@ -29,6 +29,6 @@ Crazyflie2 1 URI:
 
 In order to make it connect to the MoCap system the following steps should be followed:
 
-1-.....
-2-.....
+* First topic
+* Second Topic
 
