@@ -22,8 +22,9 @@ source devel/setup.bash
 
 Radio adresses in order to comunicate with the drones are below:
 
-*Crazyflie2 2 radio://0/90/2M/E7E7E7E7BC
-*Crazyflie2 3 radio://0/90/2M/E7E7E7E7DE
+* Crazyflie2 2 radio://0/90/2M/E7E7E7E7BC
+
+* Crazyflie2 3 radio://0/90/2M/E7E7E7E7DE
 
 ## Connecting to the MoCap system
 
