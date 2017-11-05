@@ -9,6 +9,8 @@ Clone this repository, along with ..... in catkin
 cd ~/catkin_ws/src
 git clone https://github.com/EL2425/Drone_Project_2017-.git
 
+git clone https://github.com/whoenig/crazyflie_ros.git
+
 ```
 Dont forget also to include the following commands:
 
