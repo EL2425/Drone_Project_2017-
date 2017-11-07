@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<launch>
+	<arg name="WayPoint"/>
+	<arg name="Nodename"/>
+	<node name="controller/$(arg Nodename)" pkg="trajectory_generator" type="gentraj.py" output="screen" arg="(arg WayPoint)">
+		<rosparam command="load" file="$(find trajectory_generator)/waypoints/DefinedWayPoints.yaml" />
+	</node>
+
+
+
+</launch>
