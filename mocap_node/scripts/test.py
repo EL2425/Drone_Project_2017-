@@ -34,7 +34,7 @@ class Drone:
 			rospy.logwarn("drone" + "is not found")
 		else:
 
-			return dronestaterequestResponse(drone_1_state['x'],drone_1_state['y'],drone_1_state['z'],drone_1_state['yaw'],drone_1_state['pitch'],drone_1_state['roll'])    	
+			return dronestaterequestResponse(drone_1_state['x'],drone_1_state['y'],drone_1_state['z'],drone_1_state['yaw'],-drone_1_state['pitch'],drone_1_state['roll'])    	
 
 
 

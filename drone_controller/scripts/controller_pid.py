@@ -42,7 +42,7 @@ class Controller:
                 x, y, z, yaw, pitch, roll = self.get_drone_state()
                 out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),0.0,x)
                 out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),0.0,y)
-                out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,yaw)
+                out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,(yaw*180)/np.pi)
                 out_thrust = self.thrustcontrol.pid_calculate(rospy.get_time(),1.0,z)
                 # Create rotation matrix 3-2-1 DCM - Euler Angles, Z-Y-X -> Yaw, Pitch, Roll -> Psi, theta, phi
                 ctheta = np.cos(pitch)
@@ -51,10 +51,12 @@ class Controller:
                 spsi = np.sin(yaw)
                 cphi = np.cos(roll)
                 sphi = np.sin(roll)
-                rot_matrx = np.matrix([[ctheta*cpsi,ctheta*spsi,-stheta], [-cphi*spsi+sphi*stheta*cpsi, -cphi*cpsi+sphi*stheta*spsi, sphi*ctheta], [sphi*spsi+cphi*stheta*cpsi,-sphi*cpsi+cphi*stheta*spsi,cphi*ctheta]])
+                #rot_matrx = np.matrix([[ctheta*cpsi,ctheta*spsi,-stheta], [-cphi*spsi+sphi*stheta*cpsi, -cphi*cpsi+sphi*stheta*spsi, sphi*ctheta], [sphi*spsi+cphi*stheta*cpsi,-sphi*cpsi+cphi*stheta*spsi,cphi*ctheta]])
+                rot_matrx = np.matrix([[cpsi,spsi,0.0],[-spsi,cpsi,0.0],[0.0,0.0,1.0]])
                 # rot_matrx takes from original frame to transformed frame. 
                 rotated_values = np.matmul(rot_matrx,np.matrix([[out_pitch],[out_roll],[out_yaw]]))
-                linear = Vector3(rotated_values[0,0], rotated_values[1,0], out_thrust)
+                rotated_values[2,0] = 0
+                linear = Vector3(rotated_values[0,0], -rotated_values[1,0], out_thrust+28000.0)
                 angular = Vector3(0.0, 0.0, rotated_values[2,0])
                 twist_fly = Twist(linear, angular)
                 self.pub_cmd_vel.publish(twist_fly)
@@ -88,7 +90,7 @@ class pid_controller:
         self.previousError = error
         self.previousTime = time
         self.integral = integral
-        output = p + i + d
+        output = p+i+d
         output = max(min(output, self.maxOutput), self.minOutput)
         return output
 
