@@ -26,7 +26,7 @@ class Controller:
 
     def get_drone_state(self):
         state = self.state_srv(drone_name=self.tf_prefix)
-        return state.x, state.y, state.z, state.yaw
+        return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
         rospy.wait_for_service('generate_state_' + self.tf_prefix)
@@ -39,13 +39,23 @@ class Controller:
 
     def controller_run(self):
         while not rospy.is_shutdown():
-                x, y, z, yaw = self.get_drone_state()
-                pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),0.0,x)
-                roll = self.rollcontrol.pid_calculate(rospy.get_time(),0.0,y)
-                yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,yaw)
-                thrust = self.thrustcontrol.pid_calculate(rospy.get_time(),1.0,z)
-                linear = Vector3(pitch, roll, thrust)
-                angular = Vector3(0.0, 0.0, yaw)
+                x, y, z, yaw, pitch, roll = self.get_drone_state()
+                out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),0.0,x)
+                out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),0.0,y)
+                out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,yaw)
+                out_thrust = self.thrustcontrol.pid_calculate(rospy.get_time(),1.0,z)
+                # Create rotation matrix 3-2-1 DCM - Euler Angles, Z-Y-X -> Yaw, Pitch, Roll -> Psi, theta, phi
+                ctheta = np.cos(pitch)
+                stheta = np.sin(pitch)
+                cpsi = np.cos(yaw)
+                spsi = np.sin(yaw)
+                cphi = np.cos(roll)
+                sphi = np.sin(roll)
+                rot_matrx = np.matrix([[ctheta*cpsi,ctheta*spsi,-stheta], [-cphi*spsi+sphi*stheta*cpsi, -cphi*cpsi+sphi*stheta*spsi, sphi*ctheta], [sphi*spsi+cphi*stheta*cpsi,-sphi*cpsi+cphi*stheta*spsi,cphi*ctheta]])
+                # rot_matrx takes from original frame to transformed frame. 
+                rotated_values = np.matmul(rot_matrx,np.matrix([[out_pitch],[out_roll],[out_yaw]]))
+                linear = Vector3(rotated_values[0,0], rotated_values[1,0], out_thrust)
+                angular = Vector3(0.0, 0.0, rotated_values[2,0])
                 twist_fly = Twist(linear, angular)
                 self.pub_cmd_vel.publish(twist_fly)
                 self.rate.sleep()
