@@ -2,8 +2,8 @@
 # Define Time to go between two way points - Seconds in TimeWayPoint1
 
 
-WayPoint1: [[0,0,0],[1,1,1],[2,0,2],[3,-1,1],[4,0,0]]
-TimeWayPoint1: 1
+WayPoint1: [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, -1.0, 1.1], [0.0, 0.0 , 0.1]]
+TimeWayPoint1: 10
 
 WayPoint2: [[ 0.0 ,0.0,0.0],[0.0,0.0,1.0],[0.0,0.0,0.0]]
 TimeWayPoint2: 2
