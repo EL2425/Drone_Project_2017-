@@ -9,7 +9,7 @@ from mocap_node.srv import dronestaterequest
 
 class Controller:
 
-    def __init__(self,tf_prefix):
+    def __init__(self,tf_prefix,waypointname):
 # Intialize the node, Create a serviceclient to accept from trajectory generator, publish to cm_vel,
 #  subscribe to MoCap node, set the PID gains in Self
         rospy.init_node('DroneController' + tf_prefix)
@@ -23,7 +23,7 @@ class Controller:
         self.rollcontrol = pid_controller(rospy.get_param('/PIDs/Y/kp'),rospy.get_param('/PIDs/Y/kd'),rospy.get_param('/PIDs/Y/ki'),rospy.get_param('/PIDs/Y/integratorMin'),rospy.get_param('/PIDs/Y/integratorMax'),rospy.get_param('/PIDs/Y/minOutput'),rospy.get_param('/PIDs/Y/maxOutput'))
         self.yawcontrol = pid_controller(rospy.get_param('/PIDs/Yaw/kp'),rospy.get_param('/PIDs/Yaw/kd'),rospy.get_param('/PIDs/Yaw/ki'),rospy.get_param('/PIDs/Yaw/integratorMin'),rospy.get_param('/PIDs/Yaw/integratorMax'),rospy.get_param('/PIDs/Yaw/minOutput'),rospy.get_param('/PIDs/Yaw/maxOutput'))
         self.thrustcontrol = pid_controller(rospy.get_param('/PIDs/Z/kp'),rospy.get_param('/PIDs/Z/kd'),rospy.get_param('/PIDs/Z/ki'),rospy.get_param('/PIDs/Z/integratorMin'),rospy.get_param('/PIDs/Z/integratorMax'),rospy.get_param('/PIDs/Z/minOutput'),rospy.get_param('/PIDs/Z/maxOutput'))
-
+        self.waypointname = waypointname
     def get_drone_state(self):
         state = self.state_srv(drone_name=self.tf_prefix)
         return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
@@ -40,10 +40,11 @@ class Controller:
     def controller_run(self):
         while not rospy.is_shutdown():
                 x, y, z, yaw, pitch, roll = self.get_drone_state()
-                out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),0.0,x)
-                out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),0.0,y)
+                fixedwaypoints = np.array(rospy.get_param('/'+self.waypointname))
+                out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[0],x)
+                out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[1],y)
                 out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,(yaw*180)/np.pi)
-                out_thrust = self.thrustcontrol.pid_calculate(rospy.get_time(),1.0,z)
+                out_thrust = self.thrustcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[2],z)
                 # Create rotation matrix 3-2-1 DCM - Euler Angles, Z-Y-X -> Yaw, Pitch, Roll -> Psi, theta, phi
                 ctheta = np.cos(pitch)
                 stheta = np.sin(pitch)
@@ -118,6 +119,6 @@ class pid_controller:
 
 
 if __name__ == '__main__':
-    control = Controller(sys.argv[1])
+    control = Controller(sys.argv[1],sys.argv[2])
     control.controller_run()
 

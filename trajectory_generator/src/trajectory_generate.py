@@ -32,7 +32,7 @@ class GenerateTrajectory:
         for i in range(0, NoOfTrajectors):
             WayPoint = waypoints[i + 1, :]
             S[i] = np.sum(Time)
-            Time[i] = TimeConstant * (np.linalg.norm(WayPoint - PrevWayPoint))
+            Time[i] = TimeConstant[i] * (np.linalg.norm(WayPoint - PrevWayPoint))
             PrevWayPoint = WayPoint
 
         S[NoOfTrajectors] = np.sum(Time)
@@ -97,22 +97,19 @@ class GenerateTrajectory:
         PosY_Prev = data.PrevPosY
         PosZ_Prev = data.PrevPosZ
         CoeffToUse = np.zeros((8, 3))
-        i = 1
+        
         StopComputing = 0
-        if (t < S[1]):
-            i = 1
-            CoeffToUse = Coeffients[(8 * i - 7) - 1:8 * i, 0:3]
-        elif (t < S[2]):
-            i = 2
-            CoeffToUse = Coeffients[(8 * i - 7) - 1:8 * i, 0:3]
-        elif (t < S[3]):
-            i = 3
-            CoeffToUse = Coeffients[(8 * i - 7) - 1:8 * i, 0:3]
-        elif (t < S[4]):
-            i = 4
-            CoeffToUse = Coeffients[(8 * i - 7) - 1:8 * i, 0:3]
-        elif (t > S[4]):
+        setcond = True
+        for i in range(1, len(S)):
+            if (t < S[i]):
+                CoeffToUse = Coeffients[(8 * i - 7) - 1:8 * i, 0:3]
+                setcond = False
+                break
+                
+
+        if (setcond):
             StopComputing = 1
+
 
         if (StopComputing == 0):
             A = S[i - 1]
@@ -185,7 +182,7 @@ if __name__ == '__main__':
     #waypoints = np.array([[0,0,0],[1,1,1],[2,0,2],[3,-1,1],[4,0,0]])
     #TimeConstant = 1
     waypoints = np.array(rospy.get_param('/'+sys.argv[1]))
-    TimeConstant = rospy.get_param('/'+sys.argv[2])
+    TimeConstant = np.array(rospy.get_param('/'+sys.argv[2]))
     GenerateTrajectory(waypoints,TimeConstant,sys.argv[3])
     #PosX_Prev=0
     #PosY_Prev=0
