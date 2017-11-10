@@ -14,6 +14,8 @@ class Controller:
 #  subscribe to MoCap node, set the PID gains in Self
         rospy.init_node('DroneController' + tf_prefix)
         self.pub_cmd_vel = rospy.Publisher(tf_prefix + '/cmd_vel', Twist, queue_size=10)
+        self.pub_trajgen_states = rospy.Publisher(tf_prefix + '/targetstates', Twist, queue_size=10)
+        self.pub_mopcap_states = rospy.Publisher(tf_prefix + '/mocapstates', Twist, queue_size=10)
         self.state_srv = rospy.ServiceProxy('drone_states_' + tf_prefix,dronestaterequest)
         self.tf_prefix = tf_prefix
         self.rate = rospy.Rate(50)
@@ -24,6 +26,9 @@ class Controller:
         self.yawcontrol = pid_controller(rospy.get_param('/PIDs/Yaw/kp'),rospy.get_param('/PIDs/Yaw/kd'),rospy.get_param('/PIDs/Yaw/ki'),rospy.get_param('/PIDs/Yaw/integratorMin'),rospy.get_param('/PIDs/Yaw/integratorMax'),rospy.get_param('/PIDs/Yaw/minOutput'),rospy.get_param('/PIDs/Yaw/maxOutput'))
         self.thrustcontrol = pid_controller(rospy.get_param('/PIDs/Z/kp'),rospy.get_param('/PIDs/Z/kd'),rospy.get_param('/PIDs/Z/ki'),rospy.get_param('/PIDs/Z/integratorMin'),rospy.get_param('/PIDs/Z/integratorMax'),rospy.get_param('/PIDs/Z/minOutput'),rospy.get_param('/PIDs/Z/maxOutput'))
         self.previousTime = rospy.get_time()
+        self.previousstate_X = 0
+        self.previousstate_Y = 0
+        self.previousstate_Z = 0
     def get_drone_state(self):
         state = self.state_srv(drone_name=self.tf_prefix)
         return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
@@ -40,7 +45,7 @@ class Controller:
     def controller_run(self):
         while not rospy.is_shutdown():
                 x, y, z, yaw, pitch, roll = self.get_drone_state()
-                targetstates = self.get_target_states(rospy.get_time() - self.previousTime,x,y,z)
+                targetstates = self.get_target_states(rospy.get_time() - self.previousTime,self.previousstate_X,self.previousstate_Y,self.previousstate_Z)
                 out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),targetstates.PosX,x)
                 out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),targetstates.PosY,y)
                 out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,(yaw*180)/np.pi)
@@ -61,6 +66,19 @@ class Controller:
                 angular = Vector3(0.0, 0.0, rotated_values[2,0])
                 twist_fly = Twist(linear, angular)
                 self.pub_cmd_vel.publish(twist_fly)
+                # Publish MoCap States
+                linear_mocap = Vector3(x,y,z)
+                angular_mocap = Vector3(yaw,pitch,roll)
+                twist_mocap = Twist(linear_mocap, angular_mocap)
+                self.pub_mopcap_states.publish(twist_mocap)
+                # Publish Trajectory Generator States
+                linear_trajgen = Vector3(targetstates.PosX,targetstates.PosY,targetstates.PosZ)
+                angular_trajgen = Vector3(0.0,0.0,0.0)
+                twist_trajgen = Twist(linear_trajgen, angular_trajgen)
+                self.pub_trajgen_states.publish(twist_trajgen)
+                self.previousstate_X = targetstates.PosX
+                self.previousstate_Y = targetstates.PosY
+                self.previousstate_Z = targetstates.PosZ
                 self.rate.sleep()
 
 class pid_controller:
