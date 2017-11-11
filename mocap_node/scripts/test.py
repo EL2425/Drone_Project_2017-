@@ -31,10 +31,11 @@ class Drone:
 	def request_service(self,data):
 		drone_1_state = self.mocap.get_body(self.mocap_body[data.drone_name])
 		if drone_1_state == 'off':
-			rospy.logwarn("drone" + "is not found")
+			rospy.logwarn("drone is not found")
+			return dronestaterequestResponse(data.prev_x,data.prev_y,data.prev_z,data.prev_yaw,data.prev_pitch,data.prev_roll,True)
 		else:
 
-			return dronestaterequestResponse(drone_1_state['x'],drone_1_state['y'],drone_1_state['z'],drone_1_state['yaw'],-drone_1_state['pitch'],drone_1_state['roll'])    	
+			return dronestaterequestResponse(drone_1_state['x'],drone_1_state['y'],drone_1_state['z'],drone_1_state['yaw'],-drone_1_state['pitch'],drone_1_state['roll'],False)    	
 
 
 

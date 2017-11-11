@@ -24,8 +24,8 @@
     integratorMin: -1000.0
     integratorMax: 1000.0
   Yaw:
-    kp: 0.1
-    kd: 0.05
+    kp: 50.0
+    kd: 5.0
     ki: 0.0
     minOutput: -10.0
     maxOutput: 10.0

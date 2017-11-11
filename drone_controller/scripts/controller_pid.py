@@ -9,7 +9,7 @@ from mocap_node.srv import dronestaterequest
 
 class Controller:
 
-    def __init__(self,tf_prefix,waypointname):
+    def __init__(self,tf_prefix):
 # Intialize the node, Create a serviceclient to accept from trajectory generator, publish to cm_vel,
 #  subscribe to MoCap node, set the PID gains in Self
         rospy.init_node('DroneController' + tf_prefix)
@@ -23,7 +23,7 @@ class Controller:
         self.rollcontrol = pid_controller(rospy.get_param('/PIDs/Y/kp'),rospy.get_param('/PIDs/Y/kd'),rospy.get_param('/PIDs/Y/ki'),rospy.get_param('/PIDs/Y/integratorMin'),rospy.get_param('/PIDs/Y/integratorMax'),rospy.get_param('/PIDs/Y/minOutput'),rospy.get_param('/PIDs/Y/maxOutput'))
         self.yawcontrol = pid_controller(rospy.get_param('/PIDs/Yaw/kp'),rospy.get_param('/PIDs/Yaw/kd'),rospy.get_param('/PIDs/Yaw/ki'),rospy.get_param('/PIDs/Yaw/integratorMin'),rospy.get_param('/PIDs/Yaw/integratorMax'),rospy.get_param('/PIDs/Yaw/minOutput'),rospy.get_param('/PIDs/Yaw/maxOutput'))
         self.thrustcontrol = pid_controller(rospy.get_param('/PIDs/Z/kp'),rospy.get_param('/PIDs/Z/kd'),rospy.get_param('/PIDs/Z/ki'),rospy.get_param('/PIDs/Z/integratorMin'),rospy.get_param('/PIDs/Z/integratorMax'),rospy.get_param('/PIDs/Z/minOutput'),rospy.get_param('/PIDs/Z/maxOutput'))
-        self.waypointname = waypointname
+        self.flightmode = 'TakeOff'
     def get_drone_state(self):
         state = self.state_srv(drone_name=self.tf_prefix)
         return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
@@ -39,8 +39,11 @@ class Controller:
 
     def controller_run(self):
         while not rospy.is_shutdown():
+
+        		fixedwaypoints = np.array(rospy.get_param('/'+self.waypointname))
+        		if(self.flightmode == 'TakeOff')
                 x, y, z, yaw, pitch, roll = self.get_drone_state()
-                fixedwaypoints = np.array(rospy.get_param('/'+self.waypointname))
+                
                 out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[0],x)
                 out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[1],y)
                 out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,(yaw*180)/np.pi)
@@ -60,7 +63,8 @@ class Controller:
                 linear = Vector3(rotated_values[0,0], -rotated_values[1,0], out_thrust+28000.0)
                 angular = Vector3(0.0, 0.0, rotated_values[2,0])
                 twist_fly = Twist(linear, angular)
-                self.pub_cmd_vel.publish(twist_fly)
+                self.pub_cmd_vel.publish(twist_fly)					# Publish For CrazyFlie
+                self.flightmode = rospy.get_param('/FlightMode')	# Check whether Flight mode has changed before going to sleep
                 self.rate.sleep()
 
 class pid_controller:
@@ -119,6 +123,6 @@ class pid_controller:
 
 
 if __name__ == '__main__':
-    control = Controller(sys.argv[1],sys.argv[2])
+    control = Controller(sys.argv[1])
     control.controller_run()
 
