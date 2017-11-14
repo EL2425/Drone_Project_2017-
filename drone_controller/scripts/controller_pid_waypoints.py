@@ -6,6 +6,7 @@ import sys
 from trajectory_generator.srv import *
 from geometry_msgs.msg import Twist, Vector3
 from mocap_node.srv import dronestaterequest
+from drone_controller.srv import trajgenrest
 
 class Controller:
 
@@ -35,7 +36,16 @@ class Controller:
         self.takeoff_states = np.array(rospy.get_param('/' + tf_prefix +'/takeoff_states'))
         self.landing_states = np.array(rospy.get_param('/' + tf_prefix +'/landing_states')) 
         # Keeping track of which mode is active
-        self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':False,'Landing':False,'Unknown':False}                        
+        self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':False,'Landing':False,'Unknown':False}
+        #rospy.Service('trajgen_rest' + tf_prefix, trajgenrest, self.traj_gen)
+        #rospy.spin()
+ 	
+ 	def traj_gen(self):
+ 		self.previousTime_trajegen = rospy.get_time()
+ 		output = 1.0
+ 		return trajgenrestResponse(output)
+
+
     def get_drone_state(self):
         state = self.state_srv(drone_name=self.tf_prefix,prev_x=self.previous_mocap_state['X'],prev_y=self.previous_mocap_state['Y'],prev_z=self.previous_mocap_state['Z'],prev_yaw=self.previous_mocap_state['Yaw'],prev_pitch=self.previous_mocap_state['Pitch'],prev_roll=self.previous_mocap_state['Roll'])
         if(state.notvalidflag):
@@ -107,6 +117,10 @@ class Controller:
                 inputcontroller_y = float(fixedwaypoint[1])
                 inputcontroller_z = float(fixedwaypoint[2])
                 inputcontroller_yaw = float(fixedwaypoint[3])
+                linear_fixedwaypoint = Vector3(inputcontroller_x,inputcontroller_y,inputcontroller_z)
+                angular_fixedwaypoint = Vector3(0.0,0.0,0.0)
+                twist_fixedwaypoint = Twist(linear_fixedwaypoint, angular_fixedwaypoint)
+                self.pub_trajgen_states.publish(twist_fixedwaypoint)
                 
 
             elif(self.flightmode == 'Landing'):           # Hover at the landing point
@@ -118,7 +132,7 @@ class Controller:
                 inputcontroller_z = float(self.landing_states[2])
                 inputcontroller_yaw = 0.0
                 distance_to_landingpoint = np.linalg.norm([(inputcontroller_x-x),(inputcontroller_y - y),(inputcontroller_z - z)]) # Check distance to Landing Point
-                if(distance_to_landingpoint < 0.2):
+                if(distance_to_landingpoint < 0.1):
                     compute_control = False
                     twist_fly = self.twist_stop
                     self.pid_rest_controller()     # Rest all values in PID.  
@@ -167,6 +181,7 @@ class Controller:
         self.yawcontrol.rest_controller()
         self.thrustcontrol.rest_controller()     
 
+	
 
 class pid_controller:
     def __init__(self,Kp,Kd,Ki,integratorMin,integratorMax,minOutput,maxOutput):
