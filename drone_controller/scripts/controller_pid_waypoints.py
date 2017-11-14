@@ -14,17 +14,17 @@ class Controller:
         self.pub_cmd_vel = rospy.Publisher(tf_prefix + '/cmd_vel', Twist, queue_size=10)                # Publisher node for crazyflie - Also used for recording in Rosbag
         self.pub_trajgen_states = rospy.Publisher(tf_prefix + '/targetstates', Twist, queue_size=10)    # Publishing Trajgen States received by the controller - Used for recording in Rosbag
         self.pub_mopcap_states = rospy.Publisher(tf_prefix + '/mocapstates', Twist, queue_size=10)      # Publishing MoCap States received by the controller - Used for recording in Rosbag
-        self.state_srv = rospy.ServiceProxy('drone_states_' + tf_prefix,dronestaterequest)
+        self.state_srv = rospy.ServiceProxy(tf_prefix + '/drone_states_' + tf_prefix,dronestaterequest)
         self.tf_prefix = tf_prefix                                                                      # Used to create Node name and to speak with some other services
         self.rate = rospy.Rate(50)                                                                      # Set Controller frequency
         zerosstop = Vector3(0.0, 0.0, 0.0)
         self.twist_stop = Twist(zerosstop,zerosstop)                                                    # Intialize with Zeros - Can be used to send zeros signals to Crazyflie if required.
         # Intialize Yaw,Pitch, Roll, Thrust Controllers. 
         # !!! Change the PID's to /tf_prefix/PIDs - Or find a way to call rosparam such that this is taken into account.
-        self.pitchcontrol = pid_controller(rospy.get_param('/PIDs/X/kp'),rospy.get_param('/PIDs/X/kd'),rospy.get_param('/PIDs/X/ki'),rospy.get_param('/PIDs/X/integratorMin'),rospy.get_param('/PIDs/X/integratorMax'),rospy.get_param('/PIDs/X/minOutput'),rospy.get_param('/PIDs/X/maxOutput'))
-        self.rollcontrol = pid_controller(rospy.get_param('/PIDs/Y/kp'),rospy.get_param('/PIDs/Y/kd'),rospy.get_param('/PIDs/Y/ki'),rospy.get_param('/PIDs/Y/integratorMin'),rospy.get_param('/PIDs/Y/integratorMax'),rospy.get_param('/PIDs/Y/minOutput'),rospy.get_param('/PIDs/Y/maxOutput'))
-        self.yawcontrol = pid_controller(rospy.get_param('/PIDs/Yaw/kp'),rospy.get_param('/PIDs/Yaw/kd'),rospy.get_param('/PIDs/Yaw/ki'),rospy.get_param('/PIDs/Yaw/integratorMin'),rospy.get_param('/PIDs/Yaw/integratorMax'),rospy.get_param('/PIDs/Yaw/minOutput'),rospy.get_param('/PIDs/Yaw/maxOutput'))
-        self.thrustcontrol = pid_controller(rospy.get_param('/PIDs/Z/kp'),rospy.get_param('/PIDs/Z/kd'),rospy.get_param('/PIDs/Z/ki'),rospy.get_param('/PIDs/Z/integratorMin'),rospy.get_param('/PIDs/Z/integratorMax'),rospy.get_param('/PIDs/Z/minOutput'),rospy.get_param('/PIDs/Z/maxOutput'))
+        self.pitchcontrol = pid_controller(rospy.get_param('/' + tf_prefix + '/PIDs/X/kp'),rospy.get_param('/' + tf_prefix + '/PIDs/X/kd'),rospy.get_param('/' + tf_prefix + '/PIDs/X/ki'),rospy.get_param('/' + tf_prefix + '/PIDs/X/integratorMin'),rospy.get_param('/' + tf_prefix + '/PIDs/X/integratorMax'),rospy.get_param('/' + tf_prefix + '/PIDs/X/minOutput'),rospy.get_param('/' + tf_prefix + '/PIDs/X/maxOutput'))
+        self.rollcontrol = pid_controller(rospy.get_param('/' + tf_prefix + '/PIDs/Y/kp'),rospy.get_param('/' + tf_prefix + '/PIDs/Y/kd'),rospy.get_param('/' + tf_prefix + '/PIDs/Y/ki'),rospy.get_param('/' + tf_prefix + '/PIDs/Y/integratorMin'),rospy.get_param('/' + tf_prefix + '/PIDs/Y/integratorMax'),rospy.get_param('/' + tf_prefix + '/PIDs/Y/minOutput'),rospy.get_param('/' + tf_prefix + '/PIDs/Y/maxOutput'))
+        self.yawcontrol = pid_controller(rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/kp'),rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/kd'),rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/ki'),rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/integratorMin'),rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/integratorMax'),rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/minOutput'),rospy.get_param('/' + tf_prefix + '/PIDs/Yaw/maxOutput'))
+        self.thrustcontrol = pid_controller(rospy.get_param('/' + tf_prefix +'/PIDs/Z/kp'),rospy.get_param('/' + tf_prefix +'/PIDs/Z/kd'),rospy.get_param('/' + tf_prefix +'/PIDs/Z/ki'),rospy.get_param('/' + tf_prefix +'/PIDs/Z/integratorMin'),rospy.get_param('/' + tf_prefix +'/PIDs/Z/integratorMax'),rospy.get_param('/' + tf_prefix +'/PIDs/Z/minOutput'),rospy.get_param('/' + tf_prefix +'/PIDs/Z/maxOutput'))
         # Intialize Trajectory Generator States - Will only be used if the trajectory gen. function is invoked.
         self.previous_trajgen_state = {'X':0.0,'Y':0.0,'Z':0.0}
         # Intialize previous mocap states - Incase if the drone is not found the previous state are returned
@@ -32,8 +32,8 @@ class Controller:
         # Safety Variable for Mocap - If the mocap returns no drone found for more than certain number of times - The entire controller is shut down
         self.safety_mocap = 0
         # If the controller enters Take Off Mode - It will go to these states x,y,z - Yaw by default set to zero.
-        self.takeoff_states = np.array(rospy.get_param('/takeoff_states'))
-        self.landing_states = np.array(rospy.get_param('/landing_states')) 
+        self.takeoff_states = np.array(rospy.get_param('/' + tf_prefix +'/takeoff_states'))
+        self.landing_states = np.array(rospy.get_param('/' + tf_prefix +'/landing_states')) 
         # Keeping track of which mode is active
         self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':False,'Landing':False,'Unknown':False}                        
     def get_drone_state(self):
@@ -50,7 +50,7 @@ class Controller:
         return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
-        rospy.wait_for_service('generate_state_' + self.tf_prefix)
+        rospy.wait_for_service('/' + tf_prefix +'generate_state_' + self.tf_prefix)
         try:
             generatestate = rospy.ServiceProxy('generate_state_' + self.tf_prefix, GetStates)
             states = generatestate(CurrentROSTime, PrevPosX,PrevPosY,PrevPosZ)
@@ -60,7 +60,7 @@ class Controller:
 
     def controller_run(self):
         while not rospy.is_shutdown():
-            self.flightmode = rospy.get_param('/FlightMode')    # Check what is current Flight mode from Param Workspace
+            self.flightmode = rospy.get_param('/' + tf_prefix +'/FlightMode')    # Check what is current Flight mode from Param Workspace
             x, y, z, yaw, pitch, roll = self.get_drone_state()
             compute_control = True
             if(self.flightmode == 'TakeOff'):             # Go to Fixed WayPoint - Defined in takeoff_states - Hard Coded in yaml file

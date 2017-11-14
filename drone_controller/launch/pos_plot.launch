@@ -1,0 +1,5 @@
+<launch>
+
+<node name="pos_plot" pkg="rqt_plot" type="rqt_plot" args="/crazyflie3/mocapstates/linear/x /crazyflie3/targetstates/linear/x" />
+
+</launch>

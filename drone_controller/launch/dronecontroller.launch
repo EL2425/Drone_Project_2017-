@@ -1,0 +1,34 @@
+<launch>
+'<!--' Load WayPoints & TimeConstant for trajectory generator '-->'
+	<rosparam command="load" file="$(find trajectory_generator)/waypoints/DefinedWayPoints.yaml" />
+'<!--' Start MoCap Node '-->'
+'<!--'
+<node name="mocap_sender" pkg="mocap_node" type="test.py" args="crazyflie3"/>
+'-->'
+'<!--' Start Crazyflie Server '-->'
+<include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
+
+
+'<!--'Starting Group for each node '-->'
+	<group ns="crazyflie3">
+		'<!--'Load Controller Gains '-->'
+		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_gains_pid.yaml" />
+		'<!--'Load Controller Settings '-->'
+		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_params_controller.yaml" />
+		'<!--'Start Trajectory Generator '-->'
+		<node name="trajectory_generator" pkg="trajectory_generator" type="trajectory_generate.py" args="WayPoint1 TimeWayPoint1 crazyflie3"/>
+		'<!--'Start Controller Node '-->'
+		'<!--'
+		<node name="DroneController" pkg="drone_controller" type="controller_pid_waypoints.py" args="crazyflie3"/>
+		
+		<include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
+			<arg tf_prefix="crazyflie3" uri="radio://0/90/2M/E7E7E7E7DE" />
+		</include>
+		'-->'
+	</group>
+	
+
+	
+
+
+</launch>
