@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import rosbag
+import rospy
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,11 +11,24 @@ def trajectoryPlot( bagfile, crazyflie):
 	bag=rosbag.Bag(bagfile)
 	mocapstatesDir='/'+str(crazyflie)+'/mocapstates'
 	targetstatesDir='/'+str(crazyflie)+'/targetstates'
-	msg = [m for topic, m, t in bag.read_messages(topics=[mocapstatesDir])]
-	msg_tg = [m for topic, m, t in bag.read_messages(topics=[targetstatesDir])]
+	msg=[]
+	msg_t=[]
+	msg_tg=[]
+	msg_tg_t=[]
+	for topic, m, t in bag.read_messages(topics=[mocapstatesDir]):
+		msg.append(m)
+		msg_t.append(float(t.secs) + float(t.nsecs) / 1e9)
+	for topic, m, t in bag.read_messages(topics=[targetstatesDir]):
+		msg_tg.append(m)
+		msg_tg_t.append(float(t.secs) + float(t.nsecs) / 1e9)
+
+	t0=msg_t[0]
+	msg_t = [t-t0 for t in msg_t] #Removing the initial time to start at 0
+	t_tg0=msg_tg_t[0]
+	msg_tg_t = [t-t_tg0 for t in msg_tg_t] 
 	bag.close()
-	#print(msg)
-	#print(type(msg[0]))
+	#print(msg_t)
+	#print(type(msg_t[0]))
 
 	x = [tw.linear.x for tw in msg]
 	y = [tw.linear.y for tw in msg]
@@ -30,18 +44,23 @@ def trajectoryPlot( bagfile, crazyflie):
 	ax.plot(x_tg, y_tg, z_tg)
 
 	fig2=plt.figure()
-	ax2=fig2.add_subplot(311)
-	ax2.plot(x)
-	ax2.plot(x_tg)
-	ax3=fig2.add_subplot(312)
-	ax3.plot(y)
-	ax3.plot(y_tg)
-	ax4=fig2.add_subplot(313)
-	ax4.plot(z)
-	ax4.plot(z_tg)
+	#ax2=fig2.add_subplot(311)
+	plt.subplot(311)
+	plt.plot(msg_t,x)
+	plt.plot(msg_tg_t, x_tg)
+	plt.ylabel('x')
+	#ax3=fig2.add_subplot(312)
+	plt.subplot(312)
+	plt.plot(msg_t, y)
+	plt.plot(msg_tg_t, y_tg)
+	plt.ylabel('y')
+	#ax4=fig2.add_subplot(313)
+	plt.subplot(313)
+	plt.plot(msg_t, z)
+	plt.plot(msg_tg_t, z_tg)
+	plt.ylabel('z')
+	plt.xlabel('time (s)')
 
-	print(bagfile)
-	print(crazyflie)
 
 	plt.show()
 	return()
@@ -51,3 +70,8 @@ if __name__ == '__main__':
 	bagfile = sys.argv[1]
 	crazyflie = sys.argv[2]
 	trajectoryPlot( bagfile, crazyflie)
+
+
+
+
+
