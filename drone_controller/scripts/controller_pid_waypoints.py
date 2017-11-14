@@ -10,12 +10,12 @@ from mocap_node.srv import dronestaterequest
 class Controller:
 
     def __init__(self,tf_prefix):
+        self.tf_prefix = tf_prefix
         rospy.init_node('DroneController' + tf_prefix)                                                  # Set the Controller Node.
-        self.pub_cmd_vel = rospy.Publisher(tf_prefix + '/cmd_vel', Twist, queue_size=10)                # Publisher node for crazyflie - Also used for recording in Rosbag
-        self.pub_trajgen_states = rospy.Publisher(tf_prefix + '/targetstates', Twist, queue_size=10)    # Publishing Trajgen States received by the controller - Used for recording in Rosbag
-        self.pub_mopcap_states = rospy.Publisher(tf_prefix + '/mocapstates', Twist, queue_size=10)      # Publishing MoCap States received by the controller - Used for recording in Rosbag
-        self.state_srv = rospy.ServiceProxy(tf_prefix + '/drone_states_' + tf_prefix,dronestaterequest)
-        self.tf_prefix = tf_prefix                                                                      # Used to create Node name and to speak with some other services
+        self.pub_cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)                # Publisher node for crazyflie - Also used for recording in Rosbag
+        self.pub_trajgen_states = rospy.Publisher('targetstates', Twist, queue_size=10)    # Publishing Trajgen States received by the controller - Used for recording in Rosbag
+        self.pub_mopcap_states = rospy.Publisher('mocapstates', Twist, queue_size=10)      # Publishing MoCap States received by the controller - Used for recording in Rosbag
+        #self.state_srv = rospy.ServiceProxy(tf_prefix + '/drone_states_' + tf_prefix,dronestaterequest)                                                                      # Used to create Node name and to speak with some other services
         self.rate = rospy.Rate(50)                                                                      # Set Controller frequency
         zerosstop = Vector3(0.0, 0.0, 0.0)
         self.twist_stop = Twist(zerosstop,zerosstop)                                                    # Intialize with Zeros - Can be used to send zeros signals to Crazyflie if required.
@@ -60,8 +60,15 @@ class Controller:
 
     def controller_run(self):
         while not rospy.is_shutdown():
-            self.flightmode = rospy.get_param('/' + tf_prefix +'/FlightMode')    # Check what is current Flight mode from Param Workspace
-            x, y, z, yaw, pitch, roll = self.get_drone_state()
+            self.flightmode = rospy.get_param('/' + self.tf_prefix +'/FlightMode')    # Check what is current Flight mode from Param Workspace
+            #x, y, z, yaw, pitch, roll = self.get_drone_state()
+            x = 0.0
+            y = 0.0
+            z=0.0
+            yaw =0.0
+            pitch =0.0
+            roll =0.0
+
             compute_control = True
             if(self.flightmode == 'TakeOff'):             # Go to Fixed WayPoint - Defined in takeoff_states - Hard Coded in yaml file
                 if not self.Modes['TakeOff']:

@@ -41,7 +41,7 @@ class Drone:
 
 
 def funk():
-	leninputarg = len(sys.argv)
+	leninputarg = len(sys.argv) -2
 	if (leninputarg > 2):
 		allarg = [sys.argv[1]]
 		for i in range(2,leninputarg):
