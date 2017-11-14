@@ -71,13 +71,7 @@ class Controller:
     def controller_run(self):
         while not rospy.is_shutdown():
             self.flightmode = rospy.get_param('/' + self.tf_prefix +'/FlightMode')    # Check what is current Flight mode from Param Workspace
-            #x, y, z, yaw, pitch, roll = self.get_drone_state()
-            x = 0.0
-            y = 0.0
-            z=0.0
-            yaw =0.0
-            pitch =0.0
-            roll =0.0
+            x, y, z, yaw, pitch, roll = self.get_drone_state()
 
             compute_control = True
             if(self.flightmode == 'TakeOff'):             # Go to Fixed WayPoint - Defined in takeoff_states - Hard Coded in yaml file
