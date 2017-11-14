@@ -22,10 +22,10 @@ def trajectoryPlot( bagfile, crazyflie):
 		msg_tg.append(m)
 		msg_tg_t.append(float(t.secs) + float(t.nsecs) / 1e9)
 
-	t0=msg_t[0]
-	msg_t = [t-t0 for t in msg_t] #Removing the initial time to start at 0
-	t_tg0=msg_tg_t[0]
-	msg_tg_t = [t-t_tg0 for t in msg_tg_t] 
+	#t0=msg_t[0]
+	#msg_t = [t-t0 for t in msg_t] #Removing the initial time to start at 0
+	#t_tg0=msg_tg_t[0]
+	#msg_tg_t = [t-t_tg0 for t in msg_tg_t] 
 	bag.close()
 	#print(msg_t)
 	#print(type(msg_t[0]))
