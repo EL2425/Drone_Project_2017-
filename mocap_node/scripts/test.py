@@ -16,7 +16,7 @@ class Drone:
 	def __init__(self,tf_prefix):
 
 		#initialize mocap connection
-		self.mocap = Mocap(host = '192.168.1.199', info = 1)
+		self.mocap = Mocap(host = '192.168.1.10', info = 1)
 		# Create a node
 		rospy.init_node('mocap_sender', anonymous = True)
 		# Create a topic to publish - Removing and defining it as a service
@@ -28,8 +28,11 @@ class Drone:
 		
 		rospy.spin()
 
+
 	def request_service(self,data):
+		#mocap_body = self.mocap.get_id_from_name(data.drone_name)		# Name defined in MoCap system
 		drone_1_state = self.mocap.get_body(self.mocap_body[data.drone_name])
+		#drone_1_state = self.mocap.get_body(mocap_body)
 		if drone_1_state == 'off':
 			rospy.logwarn("drone is not found")
 			return dronestaterequestResponse(data.prev_x,data.prev_y,data.prev_z,data.prev_yaw,data.prev_pitch,data.prev_roll,True)

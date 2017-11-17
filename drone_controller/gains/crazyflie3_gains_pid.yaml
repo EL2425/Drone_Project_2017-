@@ -1,6 +1,6 @@
 ﻿PIDs:
   X:
-    kp: 10.0
+    kp: 5.0
     kd: 5.0
     ki: 0.5
     minOutput: -10.0
@@ -8,7 +8,7 @@
     integratorMin: -0.1
     integratorMax: 0.1
   Y:
-    kp: 10.0
+    kp: 5.0
     kd: 5.0
     ki: 0.5
     minOutput: -10.0
@@ -19,7 +19,7 @@
     kp: 5000.0
     kd: 6000.0
     ki: 3500.0
-    minOutput: 10000.0
+    minOutput: -10000.0
     maxOutput: 60000.0
     integratorMin: -1000.0
     integratorMax: 1000.0

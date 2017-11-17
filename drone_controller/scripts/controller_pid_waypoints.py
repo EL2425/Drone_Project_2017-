@@ -16,7 +16,6 @@ class Controller:
         self.pub_cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)                # Publisher node for crazyflie - Also used for recording in Rosbag
         self.pub_trajgen_states = rospy.Publisher('targetstates', Twist, queue_size=10)    # Publishing Trajgen States received by the controller - Used for recording in Rosbag
         self.pub_mopcap_states = rospy.Publisher('mocapstates', Twist, queue_size=10)      # Publishing MoCap States received by the controller - Used for recording in Rosbag
-        #self.state_srv = rospy.ServiceProxy(tf_prefix + '/drone_states_' + tf_prefix,dronestaterequest)                                                                      # Used to create Node name and to speak with some other services
         self.rate = rospy.Rate(50)                                                                      # Set Controller frequency
         zerosstop = Vector3(0.0, 0.0, 0.0)
         self.twist_stop = Twist(zerosstop,zerosstop)                                                    # Intialize with Zeros - Can be used to send zeros signals to Crazyflie if required.
@@ -47,7 +46,13 @@ class Controller:
 
 
     def get_drone_state(self):
-        state = self.state_srv(drone_name=self.tf_prefix,prev_x=self.previous_mocap_state['X'],prev_y=self.previous_mocap_state['Y'],prev_z=self.previous_mocap_state['Z'],prev_yaw=self.previous_mocap_state['Yaw'],prev_pitch=self.previous_mocap_state['Pitch'],prev_roll=self.previous_mocap_state['Roll'])
+        rospy.wait_for_service('/' + self.tf_prefix + '/drone_states_' + self.tf_prefix)
+        try:
+        	state_srv = rospy.ServiceProxy('drone_states_' + self.tf_prefix,dronestaterequest)                                                                      # Used to create Node name and to speak with some other services
+        	state = state_srv(drone_name=self.tf_prefix,prev_x=self.previous_mocap_state['X'],prev_y=self.previous_mocap_state['Y'],prev_z=self.previous_mocap_state['Z'],prev_yaw=self.previous_mocap_state['Yaw'],prev_pitch=self.previous_mocap_state['Pitch'],prev_roll=self.previous_mocap_state['Roll'])
+       	except rospy.ServiceException, e:
+           	print "Service call failed: %s" % e
+           	
         if(state.notvalidflag):
             self.safety_mocap += 1
             if(self.safety_mocap >= 50):
@@ -60,7 +65,7 @@ class Controller:
         return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
-        rospy.wait_for_service('/' + tf_prefix +'generate_state_' + self.tf_prefix)
+        rospy.wait_for_service('/' + self.tf_prefix +'/generate_state_' + self.tf_prefix)
         try:
             generatestate = rospy.ServiceProxy('generate_state_' + self.tf_prefix, GetStates)
             states = generatestate(CurrentROSTime, PrevPosX,PrevPosY,PrevPosZ)
@@ -72,6 +77,7 @@ class Controller:
         while not rospy.is_shutdown():
             self.flightmode = rospy.get_param('/' + self.tf_prefix +'/FlightMode')    # Check what is current Flight mode from Param Workspace
             x, y, z, yaw, pitch, roll = self.get_drone_state()
+
 
             compute_control = True
             if(self.flightmode == 'TakeOff'):             # Go to Fixed WayPoint - Defined in takeoff_states - Hard Coded in yaml file
@@ -106,7 +112,7 @@ class Controller:
                 if not self.Modes['FixedWayPoint']:
                     self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':True,'Landing':False,'Unknown':False} 
                     rospy.loginfo("Fixed WayPoint Mode Entered")
-                fixedwaypoint = np.array(rospy.get_param('/FixedWayPointYaw'))
+                fixedwaypoint = np.array(rospy.get_param( '/' + self.tf_prefix + '/FixedWayPointYaw'))
                 inputcontroller_x = float(fixedwaypoint[0])
                 inputcontroller_y = float(fixedwaypoint[1])
                 inputcontroller_z = float(fixedwaypoint[2])
@@ -157,7 +163,7 @@ class Controller:
                 # rot_matrx takes from original frame to transformed frame. 
                 rotated_values = np.matmul(rot_matrx,np.matrix([[out_pitch],[out_roll],[out_yaw]]))
                 #rotated_values[2,0] = 0
-                linear = Vector3(rotated_values[0,0], -rotated_values[1,0], out_thrust+28000.0)
+                linear = Vector3(rotated_values[0,0], -rotated_values[1,0], out_thrust+43000.0)
                 angular = Vector3(0.0, 0.0, -rotated_values[2,0])
                 twist_fly = Twist(linear, angular)
             
