@@ -7,6 +7,8 @@
 <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
 
 '<!--' Starting Group for each node'-->'
+
+
 	<group ns="crazyflie2">
 		'<!--' Start MoCap Node '-->'
 		<node name="mocap_sender" pkg="mocap_node" type="test.py" args="crazyflie2" output="screen"/>
@@ -21,7 +23,7 @@
 		
 		<include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
 			<arg name="tf_prefix" value="crazyflie2" />
-			<arg name="uri" value="radio://0/90/2M/E7E7E7E7F3" /> 
+			<arg name="uri" value="radio://0/90/2M/E7E7E7E7BC" /> 
 		</include>
 		'<!--'Start Controller Node '-->'
 		<node name="DroneController2" pkg="drone_controller" type="controller_pid_waypoints.py" args="crazyflie2" output="screen" />
@@ -48,6 +50,7 @@
 		<node name="DroneController" pkg="drone_controller" type="controller_pid_waypoints.py" args="crazyflie3" output="screen" />
 		
 	</group>
+
 
 
 
