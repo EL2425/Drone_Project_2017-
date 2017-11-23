@@ -2,57 +2,26 @@
 '<!--' Load WayPoints & TimeConstant for trajectory generator '-->'
 	<rosparam command="load" file="$(find trajectory_generator)/waypoints/DefinedWayPoints.yaml" />
 
-
 '<!--' Start Crazyflie Server '-->'
 <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
 
 '<!--' Starting Group for each node'-->'
-
-
-	<group ns="crazyflie2">
+	<group ns="crazyflie1">
 		'<!--' Start MoCap Node '-->'
-		<node name="mocap_sender" pkg="mocap_node" type="test.py" args="crazyflie2" output="screen"/>
+		<node name="mocap_sender" pkg="mocap_node" type="test.py" args="crazyflie1" output="screen"/>
 		'<!--'Load Controller Gains '-->'
-		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie2_gains_pid.yaml" />
+		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie1_gains_pid.yaml" />
 		'<!--'Load Controller Settings '-->'
-		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie2_params_controller.yaml" />
+		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie1_params_controller.yaml" />
 		'<!--'Start Trajectory Generator '-->'
-		<node name="trajectory_generator" pkg="trajectory_generator" type="trajectory_generate.py" args="WayPoint1 TimeWayPoint1 crazyflie2"/>
-		
-		
-		
+		<node name="trajectory_generator" pkg="trajectory_generator" type="trajectory_generate.py" args="WayPoint1 TimeWayPoint1 crazyflie1"/>
+
 		<include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
-			<arg name="tf_prefix" value="crazyflie2" />
-			<arg name="uri" value="radio://0/90/2M/E7E7E7E7BC" /> 
+			<arg name="tf_prefix" value="crazyflie1" />
+			<arg name="uri" value="radio://0/90/2M/E7E7E7E7F3" />
 		</include>
 		'<!--'Start Controller Node '-->'
-		<node name="DroneController2" pkg="drone_controller" type="controller_pid_waypoints.py" args="crazyflie2" output="screen" />
-		
+		<node name="DroneController2" pkg="drone_controller" type="controller_pid_waypoints.py" args="crazyflie1" output="screen" />
 	</group>
 
-	<group ns="crazyflie3">
-		'<!--' Start MoCap Node '-->'
-		<node name="mocap_sender" pkg="mocap_node" type="test.py" args="crazyflie3" output="screen"/>
-		'<!--'Load Controller Gains '-->'
-		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_gains_pid.yaml" />
-		'<!--'Load Controller Settings '-->'
-		<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_params_controller.yaml" />
-		'<!--'Start Trajectory Generator '-->'
-		<node name="trajectory_generator" pkg="trajectory_generator" type="trajectory_generate.py" args="WayPoint1 TimeWayPoint1 crazyflie3"/>
-		
-		
-		
-		<include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
-			<arg name="tf_prefix" value="crazyflie3" />
-			<arg name="uri" value="radio://0/90/2M/E7E7E7E7DE" /> 
-		</include>
-		'<!--'Start Controller Node '-->'
-		<node name="DroneController" pkg="drone_controller" type="controller_pid_waypoints.py" args="crazyflie3" output="screen" />
-		
-	</group>
-
-
-
-
-	
 </launch>

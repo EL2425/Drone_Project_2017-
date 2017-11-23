@@ -11,16 +11,22 @@ def trajectoryPlot( bagfile, crazyflie):
 	bag=rosbag.Bag(bagfile)
 	mocapstatesDir='/'+str(crazyflie)+'/mocapstates'
 	targetstatesDir='/'+str(crazyflie)+'/targetstates'
+	cmd_vel = '/'+str(crazyflie)+'/cmd_vel'
 	msg=[]
 	msg_t=[]
 	msg_tg=[]
 	msg_tg_t=[]
+	msg_cmd = []
+	msg_cmdt = []
 	for topic, m, t in bag.read_messages(topics=[mocapstatesDir]):
 		msg.append(m)
 		msg_t.append(float(t.secs) + float(t.nsecs) / 1e9)
 	for topic, m, t in bag.read_messages(topics=[targetstatesDir]):
 		msg_tg.append(m)
 		msg_tg_t.append(float(t.secs) + float(t.nsecs) / 1e9)
+	for topic, m, t in bag.read_messages(topics=[cmd_vel]):
+		msg_cmdt.append(float(t.secs) + float(t.nsecs) / 1e9)
+		msg_cmd.append(m)
 
 	#t0=msg_t[0]
 	#msg_t = [t-t0 for t in msg_t] #Removing the initial time to start at 0
@@ -37,6 +43,10 @@ def trajectoryPlot( bagfile, crazyflie):
 	x_tg = [tw.linear.x for tw in msg_tg]
 	y_tg = [tw.linear.y for tw in msg_tg]
 	z_tg = [tw.linear.z for tw in msg_tg]
+
+	thrust = [tw.linear.z for tw in msg_cmd]
+	pitch = [tw.linear.x for tw in msg_cmd]
+	roll = [tw.linear.y for tw in msg_cmd]
 
 	fig=plt.figure()
 	ax=fig.add_subplot(111, projection='3d')
@@ -60,6 +70,18 @@ def trajectoryPlot( bagfile, crazyflie):
 	plt.plot(msg_tg_t, z_tg)
 	plt.ylabel('z')
 	plt.xlabel('time (s)')
+
+	fig3 = plt.figure()
+
+	plt.subplot(311)
+	plt.plot(msg_cmdt, pitch)
+	plt.ylabel('pitch')
+	plt.subplot(312)
+	plt.plot(msg_cmdt, roll)
+	plt.ylabel('roll')
+	plt.subplot(313)
+	plt.plot(msg_cmdt, thrust)
+	plt.ylabel('thrust')
 
 
 	plt.show()
