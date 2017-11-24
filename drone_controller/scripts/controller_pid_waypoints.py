@@ -11,7 +11,7 @@ from crazyflie_driver.srv import UpdateParams
 
 class Controller:
 
-    def __init__(self,tf_prefix):
+    def __init__(self, tf_prefix):
 
         self.tf_prefix = tf_prefix
 
@@ -22,7 +22,7 @@ class Controller:
         self.pub_mopcap_states = rospy.Publisher('mocapstates', Twist, queue_size=10)
         self.rate = rospy.Rate(30)
 
-        self.mode_srv = rospy.Service(tf_prefix + '/SetMode', SetMode, self.set_flight_mode)
+        self.mode_srv = rospy.Service('SetMode', SetMode, self.set_flight_mode)
 
         # Initialize the zero-message
         zerosstop = Vector3(0.0, 0.0, 0.0)
@@ -56,8 +56,26 @@ class Controller:
 
         # If the controller enters Take Off Mode - It will go to these states x,y,z - Yaw by default set to zero.
         self.takeoff_states = np.array(rospy.get_param('/' + tf_prefix + '/takeoff_states'))
+        self.takeoff_states = {
+            'X': self.takeoff_states[0],
+            'Y': self.takeoff_states[1],
+            'Z': self.takeoff_states[2],
+            'Yaw': 0.0
+        }
         self.landing_states = np.array(rospy.get_param('/' + tf_prefix + '/landing_states'))
-
+        self.landing_states = {
+            'X': self.landing_states[0],
+            'Y': self.landing_states[1],
+            'Z': self.landing_states[2],
+            'Yaw': 0.0
+        }
+        self.fixed_state = np.array(rospy.get_param('/' + tf_prefix + '/FixedWayPointYaw'))
+        self.fixed_state = {
+            'X': self.fixed_state[0],
+            'Y': self.fixed_state[1],
+            'Z': self.fixed_state[2],
+            'Yaw': self.fixed_state[3]
+        }
         # Keeping track of which mode is active
         self.Modes = {
             'TakeOff': False,
@@ -67,27 +85,25 @@ class Controller:
             'Unknown': False
         }
 
+        self.flightmode = 'Stop'
+
         self.modes = [
             'TakeOff',
             'FollowWayPoint',
             'FixedWayPoint',
-            'Landing'
+            'Landing',
+            'Stop'
         ]
 
         self._update_params = rospy.ServiceProxy('update_params', UpdateParams)
         #rospy.Service('trajgen_rest' + tf_prefix, trajgenrest, self.traj_gen)
         #rospy.spin()
- 	
- 	def traj_gen(self):
- 		self.previousTime_trajegen = rospy.get_time()
- 		output = 1.0
- 		return trajgenrestResponse(output)
 
     def get_drone_state(self):
-        rospy.wait_for_service('/' + self.tf_prefix + '/drone_states_' + self.tf_prefix)
+        rospy.wait_for_service('drone_states_' + self.tf_prefix)
         try:
-        	state_srv = rospy.ServiceProxy('drone_states_' + self.tf_prefix, dronestaterequest) # Used to create Node name and to speak with some other services
-        	state = state_srv(
+            state_srv = rospy.ServiceProxy('drone_states_' + self.tf_prefix, dronestaterequest)
+            state = state_srv(
                 drone_name=self.tf_prefix,
                 prev_x=self.previous_mocap_state['X'],
                 prev_y=self.previous_mocap_state['Y'],
@@ -96,9 +112,9 @@ class Controller:
                 prev_pitch=self.previous_mocap_state['Pitch'],
                 prev_roll=self.previous_mocap_state['Roll']
             )
-       	except rospy.ServiceException, e:
-           	print "Service call failed: %s" % e
-           	
+        except rospy.ServiceException, e:
+            print "Service call failed: %s" % e
+               
         if state.notvalidflag:
             self.safety_mocap += 1
             if self.safety_mocap >= 50:
@@ -148,12 +164,12 @@ class Controller:
             )
         return self.previous_mocap_state
 
-    def set_flight_mode(self, mode):
-        if mode in self.modes:
-            if mode == 'FollowWayPoint' and not self.flightmode == 'FollowWayPoint':
+    def set_flight_mode(self, args):
+        if args.mode in self.modes:
+            if args.mode == 'FollowWayPoint' and not self.flightmode == 'FollowWayPoint':
                 self.trajectory_tstart = rospy.get_time()
-            self.flightmode = mode
-            rospy.loginfo('Flightmode ' + str(mode) + ' entered')
+            self.flightmode = args.mode
+            rospy.loginfo('Flightmode ' + str(self.flightmode) + ' entered')
         else:
             self.flightmode = 'Unknown'
             rospy.loginfo('Unknown flightmode entered')
@@ -165,35 +181,46 @@ class Controller:
             current_state = self.get_drone_state()
             target_state = self.get_target_state()
 
-            out_pitch = self.pitchcontrol.pid_calculate(target_state.x, current_state.x)
-            out_roll = self.rollcontrol.pid_calculate(target_state.y, currrent_state.y)
-            out_yaw = self.yawcontrol.pid_calculate(target_state.yaw, current_state.yaw*180/np.pi)
-            out_thrust = self.thrustcontrol.pid_calculate(target_state.z, current_state.z)
+            if not self.flightmode == 'Stop':
+                out_pitch = self.pitchcontrol.pid_calculate(target_state['X'], current_state.x)
+                out_roll = self.rollcontrol.pid_calculate(target_state['Y'], current_state.y)
+                out_yaw = self.yawcontrol.pid_calculate(target_state['Yaw'], current_state.yaw*180/np.pi)
+                out_thrust = self.thrustcontrol.pid_calculate(target_state['Z'], current_state.z)
 
-            ctheta = np.cos(current_state.pitch)
-            stheta = np.sin(current_state.pitch)
-            cpsi = np.cos(current_state.yaw)
-            spsi = np.sin(current_state.yaw)
-            cphi = np.cos(current_state.roll)
-            sphi = np.sin(current_state.roll)
+                ctheta = np.cos(current_state.pitch)
+                stheta = np.sin(current_state.pitch)
+                cpsi = np.cos(current_state.yaw)
+                spsi = np.sin(current_state.yaw)
+                cphi = np.cos(current_state.roll)
+                sphi = np.sin(current_state.roll)
 
-            rot_matrix = np.matrix([
-                [cpsi, spsi, 0.0],
-                [-spsi, cpsi, 0.0],
-                [0.0, 0.0, 1.0]
-            ])
+                rot_matrix = np.array([
+                    [cpsi, spsi, 0.0],
+                    [-spsi, cpsi, 0.0],
+                    [0.0, 0.0, 1.0]
+                ])
 
-            # rot_matrx takes from original frame to transformed frame. 
-            rot_vals = np.matmul(rot_matrix,np.matrix([[out_pitch],[out_roll],[out_yaw]]))
-            #rotated_values[2,0] = 0
-            linear = Vector3(rot_vals[0,0], -rot_vals[1,0], out_thrust+43000.0)
-            angular = Vector3(0.0, 0.0, -rot_vals[2,0])
-            twist_fly = Twist(linear, angular)
-            
+                # rot_matrx takes from original frame to transformed frame. 
+                rot_vals = np.dot(
+                    rot_matrix,
+                    np.array([
+                        out_pitch,
+                        out_roll,
+                        out_yaw
+                    ])
+                )
+                #rotated_values[2,0] = 0
+                linear = Vector3(rot_vals[0], -rot_vals[1], out_thrust+43000.0)
+                angular = Vector3(0.0, 0.0, -rot_vals[2])
+                twist_fly = Twist(linear, angular)
+
+            else:
+                twist_fly = self.twist_stop
+
             self.pub_cmd_vel.publish(twist_fly) # Publisher For CrazyFlie
             # Publish MoCap States
-            linear_mocap = Vector3(x,y,z)
-            angular_mocap = Vector3(yaw,pitch,roll)
+            linear_mocap = Vector3(current_state.x, current_state.y, current_state.z)
+            angular_mocap = Vector3(current_state.yaw, current_state.pitch, current_state.roll)
             twist_mocap = Twist(linear_mocap, angular_mocap)
             self.pub_mopcap_states.publish(twist_mocap)
             self.rate.sleep()
@@ -204,7 +231,7 @@ class Controller:
         self.yawcontrol.reset()
         self.thrustcontrol.reset()     
 
-	
+    
 
 class pid_controller:
 
