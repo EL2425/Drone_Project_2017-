@@ -212,9 +212,9 @@ class pid_controller:
 
         # Load parameters from ROS
         param_dir = '/' + tf_prefix + '/PIDs/' + direction + '/'
-        self.Kp = rospy.get_param(param_dir + 'Kp')
-        self.Kd = rospy.get_param(param_dir + 'Kd')
-        self.Ki = rospy.get_param(param_dir + 'Ki')
+        self.Kp = rospy.get_param(param_dir + 'kp')
+        self.Kd = rospy.get_param(param_dir + 'kd')
+        self.Ki = rospy.get_param(param_dir + 'ki')
         self.integratorMin = rospy.get_param(param_dir + 'integratorMin')
         self.integratorMax = rospy.get_param(param_dir + 'integratorMax')
         self.minOutput = rospy.get_param(param_dir + 'minOutput')
