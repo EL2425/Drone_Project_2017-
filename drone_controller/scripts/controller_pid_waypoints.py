@@ -6,7 +6,7 @@ import sys
 from trajectory_generator.srv import *
 from geometry_msgs.msg import Twist, Vector3
 from mocap_node.srv import dronestaterequest
-from drone_controller.srv import trajgenrest, SetMode
+from drone_controller.srv import SetMode
 from crazyflie_driver.srv import UpdateParams
 
 class Controller:
