@@ -1,6 +1,14 @@
 <launch>
 '<!--' Load WayPoints & TimeConstant for trajectory generator '-->'
 	<rosparam command="load" file="$(find trajectory_generator)/waypoints/DefinedWayPoints.yaml" />
+	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie1_gains_pid.yaml" />
+	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie2_gains_pid.yaml" />
+	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_gains_pid.yaml" />
+
+	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie1_params_controller.yaml" />
+	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie2_params_controller.yaml" />
+	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_params_controller.yaml" />
+	
 '<!--' Start Crazyflie Server '-->'
 <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
 '<!--' Starting Group for each node'-->'
