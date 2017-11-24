@@ -7,6 +7,7 @@ from trajectory_generator.srv import *
 from geometry_msgs.msg import Twist, Vector3
 from mocap_node.srv import dronestaterequest
 from drone_controller.srv import trajgenrest
+from crazyflie_driver.srv import UpdateParams
 
 class Controller:
 
@@ -36,6 +37,7 @@ class Controller:
         self.landing_states = np.array(rospy.get_param('/' + tf_prefix +'/landing_states')) 
         # Keeping track of which mode is active
         self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':False,'Landing':False,'Unknown':False}
+        self._update_params = rospy.ServiceProxy('update_params', UpdateParams)
         #rospy.Service('trajgen_rest' + tf_prefix, trajgenrest, self.traj_gen)
         #rospy.spin()
  	
@@ -106,8 +108,10 @@ class Controller:
                 twist_trajgen = Twist(linear_trajgen, angular_trajgen)
                 self.pub_trajgen_states.publish(twist_trajgen)
                 self.previous_trajgen_state = {'X':targetstates.PosX,'Y':targetstates.PosY,'Z':targetstates.PosZ}
-                
+ #               rospy.set_param("ring/headlightEnable", 1)
+ #               rospy.set_param("ring/effect", 2)
 
+				
             elif(self.flightmode == 'FixedWayPoint'):     # Keep Reading the rosparam workspace to see if the fixedwaypoint has changed
                 if not self.Modes['FixedWayPoint']:
                     self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':True,'Landing':False,'Unknown':False} 
@@ -143,9 +147,13 @@ class Controller:
                 if not self.Modes['Unknown']:
                     self.Modes = {'TakeOff':False,'FollowWayPoint':False,'FixedWayPoint':False,'Landing':False,'Unknown':True}
                     rospy.loginfo("Unknown Mode Entered")
+                #rospy.set_param("ring/headlightEnable", 0)
+                #rospy.set_param("ring/effect", 6)
                 self.pid_rest_controller()     # Rest all values in PID.  
                      
-                
+#            if(self.tf_prefix == "crazyflie2" && rospy.get_time()>4):
+#                self._update_params(["ring/headlightEnable"])
+#                self._update_params(["ring/effect"])
 
             if(compute_control):
                 out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),inputcontroller_x,x)
