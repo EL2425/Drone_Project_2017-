@@ -9,30 +9,45 @@ from mocap_node.srv import dronestaterequest
 
 class Controller:
 
-    def __init__(self,tf_prefix):
-# Intialize the node, Create a serviceclient to accept from trajectory generator, publish to cm_vel,
-#  subscribe to MoCap node, set the PID gains in Self
+    def __init__(self, tf_prefix):
+        '''Initialize Drone Controller
+
+        Parameters
+        ==========
+        tf_prefix (string): drone name
+
+        Creates a Drone Controller node and initializes it by connecting to
+        relevant topics and services.
+        '''
+
         rospy.init_node('DroneController' + tf_prefix)
+
         self.pub_cmd_vel = rospy.Publisher(tf_prefix + '/cmd_vel', Twist, queue_size=10)
-        self.state_srv = rospy.ServiceProxy('drone_states_' + tf_prefix,dronestaterequest)
+        self.state_srv = rospy.ServiceProxy('drone_states_' + tf_prefix, dronestaterequest)
         self.tf_prefix = tf_prefix
+
         self.rate = rospy.Rate(50)
+
+        # Initialize the 'no input'-message
         zerosstop = Vector3(0.0, 0.0, 0.0)
-        self.twist_stop = Twist(zerosstop,zerosstop)
-        self.pitchcontrol = pid_controller(rospy.get_param('/PIDs/X/kp'),rospy.get_param('/PIDs/X/kd'),rospy.get_param('/PIDs/X/ki'),rospy.get_param('/PIDs/X/integratorMin'),rospy.get_param('/PIDs/X/integratorMax'),rospy.get_param('/PIDs/X/minOutput'),rospy.get_param('/PIDs/X/maxOutput'))
+        self.twist_stop = Twist(zerosstop, zerosstop)
+
+        # Initialize the PID controllers
+        self.pitchcontrol = pid_controller(rospy.get_param('/PIDs/X/kp'), rospy.get_param('/PIDs/X/kd'), rospy.get_param('/PIDs/X/ki'),rospy.get_param('/PIDs/X/integratorMin'),rospy.get_param('/PIDs/X/integratorMax'),rospy.get_param('/PIDs/X/minOutput'),rospy.get_param('/PIDs/X/maxOutput'))
         self.rollcontrol = pid_controller(rospy.get_param('/PIDs/Y/kp'),rospy.get_param('/PIDs/Y/kd'),rospy.get_param('/PIDs/Y/ki'),rospy.get_param('/PIDs/Y/integratorMin'),rospy.get_param('/PIDs/Y/integratorMax'),rospy.get_param('/PIDs/Y/minOutput'),rospy.get_param('/PIDs/Y/maxOutput'))
         self.yawcontrol = pid_controller(rospy.get_param('/PIDs/Yaw/kp'),rospy.get_param('/PIDs/Yaw/kd'),rospy.get_param('/PIDs/Yaw/ki'),rospy.get_param('/PIDs/Yaw/integratorMin'),rospy.get_param('/PIDs/Yaw/integratorMax'),rospy.get_param('/PIDs/Yaw/minOutput'),rospy.get_param('/PIDs/Yaw/maxOutput'))
         self.thrustcontrol = pid_controller(rospy.get_param('/PIDs/Z/kp'),rospy.get_param('/PIDs/Z/kd'),rospy.get_param('/PIDs/Z/ki'),rospy.get_param('/PIDs/Z/integratorMin'),rospy.get_param('/PIDs/Z/integratorMax'),rospy.get_param('/PIDs/Z/minOutput'),rospy.get_param('/PIDs/Z/maxOutput'))
         self.flightmode = 'TakeOff'
+
     def get_drone_state(self):
         state = self.state_srv(drone_name=self.tf_prefix)
         return state.x, state.y, state.z, (state.yaw*np.pi)/180, (state.pitch*np.pi)/180, (state.roll*np.pi)/180
 
-    def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
+    def get_target_states(self, CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
         rospy.wait_for_service('generate_state_' + self.tf_prefix)
         try:
             generatestate = rospy.ServiceProxy('generate_state_' + self.tf_prefix, GetStates)
-            states = generatestate(CurrentROSTime, PrevPosX,PrevPosY,PrevPosZ)
+            states = generatestate(CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ)
             return states
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
@@ -40,10 +55,11 @@ class Controller:
     def controller_run(self):
         while not rospy.is_shutdown():
 
-        		fixedwaypoints = np.array(rospy.get_param('/'+self.waypointname))
-        		if(self.flightmode == 'TakeOff')
+            fixedwaypoints = np.array(rospy.get_param('/' + self.waypointname))
+
+            if self.flightmode == 'TakeOff':
                 x, y, z, yaw, pitch, roll = self.get_drone_state()
-                
+
                 out_pitch = self.pitchcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[0],x)
                 out_roll = self.rollcontrol.pid_calculate(rospy.get_time(),fixedwaypoints[1],y)
                 out_yaw = self.yawcontrol.pid_calculate(rospy.get_time(),0.0,(yaw*180)/np.pi)
