@@ -30,7 +30,7 @@ class Drone:
             self.pub.publish(MocapResp(
                 State(
                     resp['x'], resp['y'], resp['z'],
-                    resp['pitch'], resp['roll'], resp['yaw']
+                    -resp['pitch'], resp['roll'], resp['yaw']
                 ),
                 True
             ))
