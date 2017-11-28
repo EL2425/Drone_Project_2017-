@@ -6,7 +6,7 @@ import sys
 from trajectory_generator.srv import *
 from geometry_msgs.msg import Twist, Vector3
 from mocap_node.srv import dronestaterequest
-from mocap_node.msg import State
+from mocap_node.msg import State, MocapResp
 from drone_controller.srv import SetMode
 from crazyflie_driver.srv import UpdateParams
 
@@ -19,8 +19,8 @@ class Controller:
         rospy.init_node('DroneController' + tf_prefix)
 
         self.pub_cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-        self.pub_trajgen_states = rospy.Publisher('targetstates', Twist, queue_size=10)
-        self.pub_mopcap_states = rospy.Publisher('mocapstates', Twist, queue_size=10)
+        self.sub_mocap = rospy.Subscriber('mocap_state', MocapResp, self.get_mocap)
+        self.pub_trajgen_states = rospy.Publisher('targetstates', State, queue_size=10)
         self.rate = rospy.Rate(30)
 
         self.mode_srv = rospy.Service('SetMode', SetMode, self.set_flight_mode)
@@ -43,17 +43,11 @@ class Controller:
         }
 
         # Intialize previous mocap states - Incase if the drone is not found the previous state are returned
-        self.previous_mocap_state = {
-            'X': 0.0,
-            'Y': 0.0,
-            'Z': 0.0,
-            'Yaw': 0.0,
-            'Pitch': 0.0,
-            'Roll': 0.0
-        }
+        self.mocap_state = State(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
         # Safety Variable for Mocap - counter for lost mocap frames
-        self.safety_mocap = 0
+        self.invalid_mocap_counter = 0
+        self.INVALID_MOCAP_THRESH = 30
 
         # If the controller enters Take Off Mode - It will go to these states x,y,z - Yaw by default set to zero.
         # TODO: clean up how the states are expressed in the parameters
@@ -124,6 +118,18 @@ class Controller:
 
         return resp.state
 
+    def get_mocap(self, resp):
+        if not resp.valid:
+            self.invalid_mocap_counter += 1
+            if self.invalid_mocap_counter >= self.INVALID_MOCAP_THRESH:
+                rospy.signal_shutdown(self.tf_prefix + ' was not found by mocap')
+        else:
+            self.invalid_mocap_counter = 0
+            resp.state.pitch = resp.state.pitch*np.pi/180
+            resp.state.roll = resp.state.roll*np.pi/180
+            resp.state.yaw = resp.state.yaw*np.pi/180
+            self.mocap_state = resp.state
+
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
         rospy.wait_for_service('generate_state_' + self.tf_prefix)
@@ -157,7 +163,7 @@ class Controller:
                 roll=0,
                 yaw=0
             )
-        return self.previous_mocap_state
+        return self.mocap_state
 
     def set_flight_mode(self, args):
         if args.mode in self.modes:
@@ -173,7 +179,7 @@ class Controller:
     def run(self):
 
         while not rospy.is_shutdown():
-            current_state = self.get_drone_state()
+            current_state = self.mocap_state
             target_state = self.get_target_state()
 
             if not self.flightmode == 'Stop':
@@ -214,12 +220,9 @@ class Controller:
                 twist_fly = self.twist_stop
 
             self.pub_cmd_vel.publish(twist_fly) # Publisher For CrazyFlie
-            # Publish MoCap States
-            linear_mocap = Vector3(current_state.x, current_state.y, current_state.z)
-            angular_mocap = Vector3(current_state.yaw, current_state.pitch, current_state.roll)
-            twist_mocap = Twist(linear_mocap, angular_mocap)
-            self.pub_mopcap_states.publish(twist_mocap)
             self.rate.sleep()
+
+            self.pub_trajgen_states.publish(target_state)
 
     def pid_rest_controller(self):
         self.pitchcontrol.reset()
