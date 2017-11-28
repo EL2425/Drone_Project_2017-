@@ -7,14 +7,14 @@ import sys
 import pygame
 from mocap_source_2 import Mocap, Body
 from mocap_node.srv import *
-from geometry_msgs.msg import PoseArray, Pose
+from geometry_msgs.msg import Twist, Vector3
 
 class Drone:
     def __init__(self, drone_name):
 
+        self.drone_name = drone_name
         self.mocap = Mocap(host='192.168.1.10', info=1)
         rospy.init_node('mocap_sender')
-        self.mocap_body = {}
         rospy.Service('mocap_state', dronestaterequest, self.send_state)
         self.mocap_body = self.mocap.get_id_from_name(drone_name)        # Name defined in MoCap system
 
@@ -27,26 +27,15 @@ class Drone:
     def send_state(self, data):
         state = self.mocap.get_body(self.mocap_body)
         if state == 'off':
-            rospy.logwarn("drone is not found")
-            #TODO: remove this from request and just fetch from controller node instead
+            rospy.logwarn('Warning, drone ' + self.drone_name  + ' was not found')
             return dronestaterequestResponse(
-                data.prev_x,
-                data.prev_y,
-                data.prev_z,
-                data.prev_yaw,
-                data.prev_pitch,
-                data.prev_roll,
-                True
+                state=Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+                valid=False
             )
         else:
             return dronestaterequestResponse(
-                state['x'],
-                state['y'],
-                state['z'],
-                state['yaw'],
-                -state['pitch'],  #TODO: why negative?
-                state['roll'],
-                False
+                state=Twist(state)
+                valid=True
             )        
 
 if __name__ == '__main__':

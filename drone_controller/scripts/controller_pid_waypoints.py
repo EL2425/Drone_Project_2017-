@@ -97,19 +97,11 @@ class Controller:
         rospy.wait_for_service('mocap_state')
         try:
             state_srv = rospy.ServiceProxy('mocap_state', dronestaterequest)
-            state = state_srv(
-                drone_name=self.tf_prefix,
-                prev_x=self.previous_mocap_state['X'],
-                prev_y=self.previous_mocap_state['Y'],
-                prev_z=self.previous_mocap_state['Z'],
-                prev_yaw=self.previous_mocap_state['Yaw'],
-                prev_pitch=self.previous_mocap_state['Pitch'],
-                prev_roll=self.previous_mocap_state['Roll']
-            )
+            resp = state_srv()
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
                
-        if state.notvalidflag:
+        if not resp.valid:
             self.safety_mocap += 1
             if self.safety_mocap >= 50:
                 rospy.loginfo('Drone Not Found For a Long Time')
@@ -117,20 +109,15 @@ class Controller:
         else:
             self.safety_mocap = 0   # Rest - So the shutdown logic will be applied for 10 consecutive frames
 
-        self.previous_mocap_state = {
-            'X': state.x,
-            'Y': state.y,
-            'Z': state.z,
-            'Yaw': state.yaw,
-            'Pitch': state.pitch,
-            'Roll': state.roll
-        }
+        self.previous_mocap_state = resp.state
+        
+        degs = [a*np.pi/180 for a in resp.state.angular]
+        angular_deg = Vector3(degs[0], degs[1], degs[2])
+        #state.yaw = state.yaw*np.pi/180
+        #state.pitch = state.pitch*np.pi/180
+        #state.roll = state.roll*np.pi/180
 
-        state.yaw = state.yaw*np.pi/180
-        state.pitch = state.pitch*np.pi/180
-        state.roll = state.roll*np.pi/180
-
-        return state
+        return Twist(resp.state.linear, angular_deg)
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
         rospy.wait_for_service('generate_state_' + self.tf_prefix)
