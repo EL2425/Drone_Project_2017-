@@ -27,13 +27,14 @@ class Drone:
                     State(0, 0, 0, 0, 0, 0),
                     False
                 ))
-            self.pub.publish(MocapResp(
-                State(
-                    resp['x'], resp['y'], resp['z'],
-                    -resp['pitch'], resp['roll'], resp['yaw']
-                ),
-                True
-            ))
+            else:
+                self.pub.publish(MocapResp(
+                    State(
+                        resp['x'], resp['y'], resp['z'],
+                        -resp['pitch'], resp['roll'], resp['yaw']
+                    ),
+                    True
+                ))
             self.rate.sleep()
 
 if __name__ == '__main__':

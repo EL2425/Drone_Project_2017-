@@ -91,38 +91,14 @@ class Controller:
         ]
 
         self._update_params = rospy.ServiceProxy('update_params', UpdateParams)
-        #rospy.Service('trajgen_rest' + tf_prefix, trajgenrest, self.traj_gen)
-        #rospy.spin()
 
-    def get_drone_state(self):
-        rospy.wait_for_service('mocap_state')
-        try:
-            state_srv = rospy.ServiceProxy('mocap_state', dronestaterequest)
-            resp = state_srv()
-        except rospy.ServiceException, e:
-            print "Service call failed: %s" % e
-
-        if not resp.valid:
-            self.safety_mocap += 1
-            if self.safety_mocap >= 50:
-                rospy.loginfo('Drone Not Found For a Long Time')
-                rospy.signal_shutdown('Drone Not Found For a Long Time')
-        else:
-            self.safety_mocap = 0   # Rest - So the shutdown logic will be applied for 10 consecutive frames
-
-        self.previous_mocap_state = resp.state
-
-        resp.state.pitch = resp.state.pitch*np.pi/180
-        resp.state.roll = resp.state.roll*np.pi/180
-        resp.state.yaw = resp.state.yaw*np.pi/180
-
-        return resp.state
 
     def get_mocap(self, resp):
         if not resp.valid:
             self.invalid_mocap_counter += 1
+            rospy.loginfo(self.tf_prefix + ' not found by mocap')
             if self.invalid_mocap_counter >= self.INVALID_MOCAP_THRESH:
-                rospy.signal_shutdown(self.tf_prefix + ' was not found by mocap')
+                rospy.signal_shutdown(self.tf_prefix + ' not found for long time')
         else:
             self.invalid_mocap_counter = 0
             resp.state.pitch = resp.state.pitch*np.pi/180
