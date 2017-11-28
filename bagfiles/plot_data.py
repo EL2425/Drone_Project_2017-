@@ -3,13 +3,14 @@
 import rosbag
 import rospy
 import sys
+import os
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 
 def trajectoryPlot( bagfile, crazyflie):
 	bag=rosbag.Bag(bagfile)
-	mocapstatesDir='/'+str(crazyflie)+'/mocapstates'
+	mocapstatesDir='/'+str(crazyflie)+'/mocap_state'
 	targetstatesDir='/'+str(crazyflie)+'/targetstates'
 	msg=[]
 	msg_t=[]
@@ -34,13 +35,13 @@ def trajectoryPlot( bagfile, crazyflie):
 	
 
 
-	x = [tw.linear.x for tw in msg]
-	y = [tw.linear.y for tw in msg]
-	z = [tw.linear.z for tw in msg]
+	x = [s.state.x for s in msg]
+	y = [s.state.y for s in msg]
+	z = [s.state.z for s in msg]
 
-	x_tg = [tw.linear.x for tw in msg_tg]
-	y_tg = [tw.linear.y for tw in msg_tg]
-	z_tg = [tw.linear.z for tw in msg_tg]
+	x_tg = [s.x for s in msg_tg]
+	y_tg = [s.y for s in msg_tg]
+	z_tg = [s.z for s in msg_tg]
 
 	print(len(msg_t))
 	print(len(msg_tg_t))
@@ -56,7 +57,6 @@ def trajectoryPlot( bagfile, crazyflie):
 		errX.append(abs(x[commonTime[i]]-x_tg[i]))
 		errY.append(abs(y[commonTime[i]]-y_tg[i]))
 		errZ.append(abs(z[commonTime[i]]-z_tg[i]))
-
 
 	maxErrX = np.max(errX)
 	maxErrY = np.max(errY)
@@ -116,8 +116,14 @@ def trajectoryPlot( bagfile, crazyflie):
 
 
 if __name__ == '__main__':
-	bagfile = sys.argv[1]
-	crazyflie = sys.argv[2]
+	if len(sys.argv) == 2:
+		bagfiles = [f for f in os.listdir('.') if f.endswith('.bag')]
+		bagfiles.sort()
+		bagfile = bagfiles[-1]
+		crazyflie = sys.argv[1]
+	else:
+		bagfile = sys.argv[1]
+		crazyflie = sys.argv[2]
 	trajectoryPlot( bagfile, crazyflie)
 
 
