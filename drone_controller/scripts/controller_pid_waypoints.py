@@ -55,38 +55,32 @@ class Controller:
         self.safety_mocap = 0
 
         # If the controller enters Take Off Mode - It will go to these states x,y,z - Yaw by default set to zero.
-        self.takeoff_states = np.array(rospy.get_param('/' + tf_prefix + '/takeoff_states'))
+        # TODO: clean up how the states are expressed in the parameters
+        self.takeoff_states = np.array(rospy.get_param('takeoff_states'))
         self.takeoff_states = {
             'X': self.takeoff_states[0],
             'Y': self.takeoff_states[1],
             'Z': self.takeoff_states[2],
             'Yaw': 0.0
         }
-        self.landing_states = np.array(rospy.get_param('/' + tf_prefix + '/landing_states'))
+        self.landing_states = np.array(rospy.get_param('landing_states'))
         self.landing_states = {
             'X': self.landing_states[0],
             'Y': self.landing_states[1],
             'Z': self.landing_states[2],
             'Yaw': 0.0
         }
-        self.fixed_state = np.array(rospy.get_param('/' + tf_prefix + '/FixedWayPointYaw'))
+        self.fixed_state = np.array(rospy.get_param('FixedWayPointYaw'))
         self.fixed_state = {
             'X': self.fixed_state[0],
             'Y': self.fixed_state[1],
             'Z': self.fixed_state[2],
             'Yaw': self.fixed_state[3]
         }
-        # Keeping track of which mode is active
-        self.Modes = {
-            'TakeOff': False,
-            'FollowWayPoint': False,
-            'FixedWayPoint': False,
-            'Landing': False,
-            'Unknown': False
-        }
 
+        # Initialize flightmode - start controller in 'Stop'-mode
         self.flightmode = 'Stop'
-
+        # Possible flightmodes available
         self.modes = [
             'TakeOff',
             'FollowWayPoint',
@@ -100,9 +94,9 @@ class Controller:
         #rospy.spin()
 
     def get_drone_state(self):
-        rospy.wait_for_service('drone_states_' + self.tf_prefix)
+        rospy.wait_for_service('mocap_state')
         try:
-            state_srv = rospy.ServiceProxy('drone_states_' + self.tf_prefix, dronestaterequest)
+            state_srv = rospy.ServiceProxy('mocap_state', dronestaterequest)
             state = state_srv(
                 drone_name=self.tf_prefix,
                 prev_x=self.previous_mocap_state['X'],
@@ -139,7 +133,7 @@ class Controller:
         return state
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
-        rospy.wait_for_service('/' + self.tf_prefix +'/generate_state_' + self.tf_prefix)
+        rospy.wait_for_service('generate_state_' + self.tf_prefix)
         try:
             generatestate = rospy.ServiceProxy('generate_state_' + self.tf_prefix, GetStates)
             states = generatestate(CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ)
@@ -187,6 +181,7 @@ class Controller:
                 out_yaw = self.yawcontrol.pid_calculate(target_state['Yaw'], current_state.yaw*180/np.pi)
                 out_thrust = self.thrustcontrol.pid_calculate(target_state['Z'], current_state.z)
 
+                # TODO: check if these are RADs or DEGs
                 ctheta = np.cos(current_state.pitch)
                 stheta = np.sin(current_state.pitch)
                 cpsi = np.cos(current_state.yaw)
