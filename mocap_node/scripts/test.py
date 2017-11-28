@@ -6,8 +6,8 @@ import sys
 
 import pygame
 from mocap_source_2 import Mocap, Body
+from mocap_node.msg import State
 from mocap_node.srv import *
-from geometry_msgs.msg import Twist, Vector3
 
 class Drone:
     def __init__(self, drone_name):
@@ -26,17 +26,24 @@ class Drone:
 
     def send_state(self, data):
         state = self.mocap.get_body(self.mocap_body)
-        if state == 'off':
+        if  state == 'off':
             rospy.logwarn('Warning, drone ' + self.drone_name  + ' was not found')
             return dronestaterequestResponse(
-                state=Twist(Vector3(0, 0, 0), Vector3(0, 0, 0))
+                state=State(0, 0, 0, 0, 0, 0),
                 valid=False
             )
         else:
             return dronestaterequestResponse(
-                state=Twist(state)
+                state=State(
+                    x=state['x'],
+                    y=state['y'],
+                    z=state['z'],
+                    pitch=state['pitch'],
+                    roll=state['roll'],
+                    yaw=state['yaw']
+                ),
                 valid=True
-            )        
+            )
 
 if __name__ == '__main__':
     mocap_node = Drone(sys.argv[1])

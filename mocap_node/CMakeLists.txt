@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
-  geometry_msgs
   message_generation
 )
 
@@ -51,15 +50,13 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
  add_message_files(
    FILES
-   dronestate.msg
-#   Message2.msg
+   State.msg
  )
 
 ## Generate services in the 'srv' folder
  add_service_files(
    FILES
    dronestaterequest.srv
-#   Service2.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -73,7 +70,6 @@ find_package(catkin REQUIRED COMPONENTS
  generate_messages(
    DEPENDENCIES
    std_msgs
-   geometry_msgs
  )
 
 ################################################

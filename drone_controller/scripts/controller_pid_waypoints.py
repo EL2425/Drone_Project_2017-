@@ -6,6 +6,7 @@ import sys
 from trajectory_generator.srv import *
 from geometry_msgs.msg import Twist, Vector3
 from mocap_node.srv import dronestaterequest
+from mocap_node.msg import State
 from drone_controller.srv import SetMode
 from crazyflie_driver.srv import UpdateParams
 
@@ -57,26 +58,32 @@ class Controller:
         # If the controller enters Take Off Mode - It will go to these states x,y,z - Yaw by default set to zero.
         # TODO: clean up how the states are expressed in the parameters
         self.takeoff_states = np.array(rospy.get_param('takeoff_states'))
-        self.takeoff_states = {
-            'X': self.takeoff_states[0],
-            'Y': self.takeoff_states[1],
-            'Z': self.takeoff_states[2],
-            'Yaw': 0.0
-        }
+        self.takeoff_states = State(
+            x=self.takeoff_states[0],
+            y=self.takeoff_states[1],
+            z=self.takeoff_states[2],
+            pitch=0.0,
+            roll=0.0,
+            yaw=0.0
+        )
         self.landing_states = np.array(rospy.get_param('landing_states'))
-        self.landing_states = {
-            'X': self.landing_states[0],
-            'Y': self.landing_states[1],
-            'Z': self.landing_states[2],
-            'Yaw': 0.0
-        }
+        self.landing_states = State(
+            x=self.landing_states[0],
+            y=self.landing_states[1],
+            z=self.landing_states[2],
+            pitch=0.0,
+            roll=0.0,
+            yaw=0.0
+        )
         self.fixed_state = np.array(rospy.get_param('FixedWayPointYaw'))
-        self.fixed_state = {
-            'X': self.fixed_state[0],
-            'Y': self.fixed_state[1],
-            'Z': self.fixed_state[2],
-            'Yaw': self.fixed_state[3]
-        }
+        self.fixed_state = State(
+            x=self.fixed_state[0],
+            y=self.fixed_state[1],
+            z=self.fixed_state[2],
+            pitch=0.0,
+            roll=0.0,
+            yaw=self.fixed_state[3]
+        )
 
         # Initialize flightmode - start controller in 'Stop'-mode
         self.flightmode = 'Stop'
@@ -100,7 +107,7 @@ class Controller:
             resp = state_srv()
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
-               
+
         if not resp.valid:
             self.safety_mocap += 1
             if self.safety_mocap >= 50:
@@ -110,14 +117,13 @@ class Controller:
             self.safety_mocap = 0   # Rest - So the shutdown logic will be applied for 10 consecutive frames
 
         self.previous_mocap_state = resp.state
-        
-        degs = [a*np.pi/180 for a in resp.state.angular]
-        angular_deg = Vector3(degs[0], degs[1], degs[2])
-        #state.yaw = state.yaw*np.pi/180
-        #state.pitch = state.pitch*np.pi/180
-        #state.roll = state.roll*np.pi/180
 
-        return Twist(resp.state.linear, angular_deg)
+        resp.state.pitch = resp.state.pitch*np.pi/180
+        resp.state.roll = resp.state.roll*np.pi/180
+        resp.state.yaw = resp.state.yaw*np.pi/180
+
+        return resp.state
+
 
     def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
         rospy.wait_for_service('generate_state_' + self.tf_prefix)
@@ -137,11 +143,19 @@ class Controller:
         elif self.flightmode == 'FixedWayPoint':
             return self.fixed_state
         elif self.flightmode == 'FollowWayPoint':
-            return self.get_target_states(
+            traj_resp = self.get_target_states(
                 rospy.get_time() - self.trajectory_tstart,
                 self.previous_trajgen_state['X'],
                 self.previous_trajgen_state['Y'],
                 self.previous_trajgen_state['Z']
+            )
+            return State(
+                x=traj_resp.PosX,
+                y=traj_resp.PosY,
+                z=traj_resp.PosZ,
+                pitch=0,
+                roll=0,
+                yaw=0
             )
         return self.previous_mocap_state
 
@@ -163,10 +177,10 @@ class Controller:
             target_state = self.get_target_state()
 
             if not self.flightmode == 'Stop':
-                out_pitch = self.pitchcontrol.pid_calculate(target_state['X'], current_state.x)
-                out_roll = self.rollcontrol.pid_calculate(target_state['Y'], current_state.y)
-                out_yaw = self.yawcontrol.pid_calculate(target_state['Yaw'], current_state.yaw*180/np.pi)
-                out_thrust = self.thrustcontrol.pid_calculate(target_state['Z'], current_state.z)
+                out_pitch = self.pitchcontrol.pid_calculate(target_state.x, current_state.x)
+                out_roll = self.rollcontrol.pid_calculate(target_state.y, current_state.y)
+                out_yaw = self.yawcontrol.pid_calculate(target_state.yaw, current_state.yaw*180/np.pi)
+                out_thrust = self.thrustcontrol.pid_calculate(target_state.z, current_state.z)
 
                 # TODO: check if these are RADs or DEGs
                 ctheta = np.cos(current_state.pitch)
@@ -182,7 +196,7 @@ class Controller:
                     [0.0, 0.0, 1.0]
                 ])
 
-                # rot_matrx takes from original frame to transformed frame. 
+                # rot_matrx takes from original frame to transformed frame.
                 rot_vals = np.dot(
                     rot_matrix,
                     np.array([
@@ -206,14 +220,14 @@ class Controller:
             twist_mocap = Twist(linear_mocap, angular_mocap)
             self.pub_mopcap_states.publish(twist_mocap)
             self.rate.sleep()
-    
+
     def pid_rest_controller(self):
         self.pitchcontrol.reset()
         self.rollcontrol.reset()
         self.yawcontrol.reset()
-        self.thrustcontrol.reset()     
+        self.thrustcontrol.reset()
 
-    
+
 
 class pid_controller:
 
@@ -283,4 +297,3 @@ class pid_controller:
 if __name__ == '__main__':
     controller = Controller(sys.argv[1])
     controller.run()
-
