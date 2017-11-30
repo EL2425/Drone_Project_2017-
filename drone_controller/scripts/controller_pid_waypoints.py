@@ -16,7 +16,7 @@ class Controller:
 
         self.tf_prefix = tf_prefix
 
-        rospy.init_node('DroneController' + tf_prefix)
+        rospy.init_node('drone_controller')
 
         self.pub_cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.sub_mocap = rospy.Subscriber('mocap_state', MocapResp, self.get_mocap)
@@ -213,14 +213,14 @@ class pid_controller:
     def __init__(self, tf_prefix, direction):
 
         # Load parameters from ROS
-        param_dir = '/' + tf_prefix + '/PIDs/' + direction + '/'
-        self.Kp = rospy.get_param(param_dir + 'kp')
-        self.Kd = rospy.get_param(param_dir + 'kd')
-        self.Ki = rospy.get_param(param_dir + 'ki')
-        self.integratorMin = rospy.get_param(param_dir + 'integratorMin')
-        self.integratorMax = rospy.get_param(param_dir + 'integratorMax')
-        self.minOutput = rospy.get_param(param_dir + 'minOutput')
-        self.maxOutput = rospy.get_param(param_dir + 'maxOutput')
+        params = rospy.get_param('PIDs/' + direction)
+        self.Kp = params['kp']
+        self.Kd = params['kd']
+        self.Ki = params['ki']
+        self.integratorMin = params['integratorMin']
+        self.integratorMax = params['integratorMax']
+        self.minOutput = params['minOutput']
+        self.maxOutput = params['maxOutput']
 
         # Initialize errors and integrals
         self.integral = 0.0

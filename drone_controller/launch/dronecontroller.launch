@@ -1,33 +1,27 @@
 <launch>
-'<!--' Load WayPoints & TimeConstant for trajectory generator '-->'
-	<rosparam command="load" file="$(find trajectory_generator)/waypoints/DefinedWayPoints.yaml" />
-	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie1_gains_pid.yaml" />
-	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie2_gains_pid.yaml" />
-	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_gains_pid.yaml" />
+  <!-- Load WayPoints & TimeConstant for trajectory generator -->
+  <rosparam command="load"
+            file="$(find trajectory_generator)/waypoints/DefinedWayPoints.yaml"
+  />
 
-	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie1_params_controller.yaml" />
-	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie2_params_controller.yaml" />
-	<rosparam command="load" file="$(find drone_controller)/gains/crazyflie3_params_controller.yaml" />
-	
-'<!--' Start Crazyflie Server '-->'
-<include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
-'<!--' Starting Group for each node'-->'
+  <!-- Start Crazyflie Server -->
+  <include file="$(find crazyflie_driver)/launch/crazyflie_server.launch"/>
 
+<!-- Starting Group for each node -->
+  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
+    <arg name="tf_prefix" value="crazyflie2"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7BC"/>
+    <!-- Default is WayPoint:=WayPoint1 TimeWayPoint:=TimeWayPoint1 -->
+    <arg name="WayPoint" value="WayPoint4" />
+    <arg name="TimeWayPoint" value="TimeWayPoint4" />
+  </include>
 
-	<include file="$(find drone_controller)/launch/CrazyFlie.launch">
-		<arg name="tf_prefix" value= "crazyflie2"/>
-		<arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7BC" />
-		<!--Default is WayPoint:=WayPoint1 TimeWayPoint:=TimeWayPoint1 -->
-		<arg name="WayPoint" value="WayPoint4" />
-		<arg name="TimeWayPoint" value="TimeWayPoint4" />
-	</include>
-
-	<include file="$(find drone_controller)/launch/CrazyFlie.launch">
-		<arg name="tf_prefix" value= "crazyflie3"/>
-		<arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7DE" />
-		<!--Default is WayPoint:=WayPoint1 TimeWayPoint:=TimeWayPoint1 -->
-		<arg name="WayPoint" value="WayPoint5" />
-		<arg name="TimeWayPoint" value="TimeWayPoint5" />
-	</include>
+  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
+    <arg name="tf_prefix" value= "crazyflie3"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7DE" />
+    <!-- Default is WayPoint:=WayPoint1 TimeWayPoint:=TimeWayPoint1 -->
+    <arg name="WayPoint" value="WayPoint5" />
+    <arg name="TimeWayPoint" value="TimeWayPoint5" />
+  </include>
 
 </launch>
