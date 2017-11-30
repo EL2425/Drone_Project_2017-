@@ -9,7 +9,7 @@
   <!-- Start MoCap Node -->
   <node name="mocap_node"
         pkg="mocap_node"
-        type="test.py"
+        type="drone_mocap.py"
         args="$(arg tf_prefix)"
         output="screen"
   />
