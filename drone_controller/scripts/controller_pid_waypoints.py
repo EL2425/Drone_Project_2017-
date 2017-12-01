@@ -21,6 +21,7 @@ class Controller:
         self.pub_cmd_vel = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.sub_mocap = rospy.Subscriber('mocap_state', MocapResp, self.get_mocap)
         self.pub_trajgen_states = rospy.Publisher('targetstates', State, queue_size=10)
+        self.sub_waypoint = rospy.Subscriber('waypoints', Twist, self.set_waypoint)
         self.rate = rospy.Rate(30)
 
         self.mode_srv = rospy.Service('SetMode', SetMode, self.set_flight_mode)
@@ -79,6 +80,8 @@ class Controller:
             yaw=self.fixed_state[3]
         )
 
+        self.waypoint = State(0, 0, 0, 0, 0, 0)
+
         # Initialize flightmode - start controller in 'Stop'-mode
         self.flightmode = 'Stop'
         # Possible flightmodes available
@@ -86,6 +89,7 @@ class Controller:
             'TakeOff',
             'FollowWayPoint',
             'FixedWayPoint',
+            'Waypoint',
             'Landing',
             'Stop'
         ]
@@ -116,6 +120,10 @@ class Controller:
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
 
+    def set_waypoint(self, data):
+        self.waypoint = State(data.linear.x, data.linear.y, data.linear.z,
+                              0.0, 0.0, 0.0)
+
     def get_target_state(self):
 
         if self.flightmode == 'TakeOff':
@@ -139,10 +147,14 @@ class Controller:
                 roll=0,
                 yaw=0
             )
+        elif self.flightmode == 'Waypoint':
+            return self.waypoint
         return self.mocap_state
 
     def set_flight_mode(self, args):
         if args.mode in self.modes:
+            if self.flightmode == 'Stop' and args.mode != 'Stop':
+                self.pid_rest_controller()
             if args.mode == 'FollowWayPoint' and not self.flightmode == 'FollowWayPoint':
                 self.trajectory_tstart = rospy.get_time()
             self.flightmode = args.mode

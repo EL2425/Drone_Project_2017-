@@ -22,16 +22,17 @@
             file="$(find drone_controller)/gains/$(arg tf_prefix)_params_controller.yaml"
   />
 
-  <!-- Start Trajectory Generator -->
+  <!-- Start Trajectory Generator 
   <node name="trajectory_generator"
         pkg="trajectory_generator"
-        type="trajectory_generate.py"
+        type="TrajectoryGenerator.py"
         args="$(arg WayPoint) $(arg TimeWayPoint) $(arg tf_prefix)"
   />
+  -->
 
   <!-- Add drone to the crazyflie server -->
   <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
-    <arg name="tf_prefix" value= "$(arg tf_prefix)"/>
+    <arg name="tf_prefix" value="$(arg tf_prefix)"/>
     <arg name="uri" value="$(arg uri_drone)" />
   </include>
 
