@@ -23,6 +23,13 @@
     <arg name="TimeWayPoint" value="TimeWayPoint4"/>
   </include>
 
+  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
+    <arg name="tf_prefix" value="crazyflie6"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A6"/>
+    <arg name="WayPoint" value="WayPoint4"/>
+    <arg name="TimeWayPoint" value="TimeWayPoint4"/>
+  </include>
+
   <node name="trajectory_generator"
         pkg="trajectory_generator"
         type="TrajectoryGenerator.py"

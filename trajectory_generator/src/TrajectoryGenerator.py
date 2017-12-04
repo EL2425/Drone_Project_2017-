@@ -23,7 +23,7 @@ class TrajectoryGenerator(object):
     def __init__(self,drones,time_steps):
         self.Q1 = 1             # Weight for the norm of distance between target and position
         self.Q2 = 15            # Weigth for the collision avoidance
-        self.Q3 = [1,1,1]      # Weight factor each dimension of colllision avoidance
+        self.Q3 = [1,1,0.1]      # Weight factor each dimension of colllision avoidance
         self.d1 = 0.3           # Distance a drone can move in each direction in a timestep [m]
         self.drones = drones
         self.N = len(drones)
@@ -132,7 +132,7 @@ class TrajectoryGenerator(object):
             self.obj_func,
             self.x_prev,
             bounds=bnd,
-            #constraints=con,
+            constraints=con,
             method='SLSQP',
             options={
                 'disp': False,
@@ -240,9 +240,10 @@ if __name__ == '__main__':
     drones = [
         # Drone("crazyflie1", -2, -2, 0, 2, 2, 1),
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
-        Drone("crazyflie3", 1.1, -2.5, 1, -0.5, 1.5, 1.2),
+        Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
         # Drone("crazyflie4", 2, 2, -2, -0.0, 1.5, 1.2),
-        Drone("crazyflie5", 0, 0, 1, 2, 1, 1.2)
+        Drone('crazyflie5', 0, 0, 1, 2, 1, 1.2),
+        Drone('crazyflie6', 0, 0, 0, 0, 0, 0)
     ]
 
     trajgen = TrajectoryGenerator(drones, 4)
