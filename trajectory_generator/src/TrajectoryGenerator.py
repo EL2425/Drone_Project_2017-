@@ -22,9 +22,9 @@ class TrajectoryGenerator(object):
     distance between different drones'''
     def __init__(self,drones,time_steps):
         self.Q1 = 1             # Weight for the norm of distance between target and position
-        self.Q2 = 50            # Weigth for the collision avoidance
+        self.Q2 = 15            # Weigth for the collision avoidance
         self.Q3 = [1,1,1]      # Weight factor each dimension of colllision avoidance
-        self.d1 = 0.05           # Distance a drone can move in each direction in a timestep [m]
+        self.d1 = 0.3           # Distance a drone can move in each direction in a timestep [m]
         self.drones = drones
         self.N = len(drones)
         self.T = time_steps
@@ -41,6 +41,12 @@ class TrajectoryGenerator(object):
     def obj_func(self,X):
         x=np.array(X)
         dist = np.linalg.norm(x - npmat.repmat(self.x_target,1,self.T))
+        #pos_last = x[-self.N*self.dim:]
+        #s = 0
+        #for i in range(3):
+        #    s += (pos_last[i] - self.x_target[i])**2
+        #dist = np.sqrt(s)
+        #dist = pos_last - self.x_target)
 
         #penalty for two drones to be close to each other.
         collision_sum=0
@@ -109,7 +115,7 @@ class TrajectoryGenerator(object):
     def calc_trajectory(self):
 
         [d.update_state() for d in self.drones]
-        self.x_target = np.array(self.get_target_states())
+        self.x_target = self.get_target_states()
         self.x_prev = self.get_current_states()*self.T
         start = time.time()
 
@@ -127,11 +133,11 @@ class TrajectoryGenerator(object):
             self.x_prev,
             bounds=bnd,
             #constraints=con,
-            #method='SLSQP',
+            method='SLSQP',
             options={
-                'disp': True,
+                'disp': False,
                 'maxiter': 1000,
-                'ftol': 0.00001
+                #'ftol': 0.00001
             }
         )
 
@@ -146,7 +152,6 @@ class TrajectoryGenerator(object):
 
         [d.publish_wp() for d in self.drones]
         end=time.time()
-        print('Time Elapsed: '+ str((end-start)))
 
     def calculate_multiple(self,number_of_iter):
         start= time.time()
@@ -155,10 +160,9 @@ class TrajectoryGenerator(object):
             self.calc_trajectory()
             self.rate.sleep()
             #self.plot_states() # Be careful, opens a lot of plots
-        print('Time Elapsed: '+str(time.time()-start))
 
     def plot_states(self):
-        self.print_states()
+        #self.print_states()
         fig = plt.figure()
         ax = fig.add_subplot(111,projection='3d')
         possible_colors=['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
@@ -219,7 +223,7 @@ class Drone(object):
     def publish_wp(self):
         linear = Vector3(self.wp_x, self.wp_y, self.wp_z)
         target = Vector3(self.target_x, self.target_y, self.target_z)
-        angular = Vector3(0.0, 0.0, 0)
+        angular = Vector3(0.0, 0.0, 0.0)
         next_state = Twist(linear, angular)
         target_state = Twist(target, angular)
         self.pub_controller.publish(next_state)
@@ -236,7 +240,7 @@ if __name__ == '__main__':
     drones = [
         # Drone("crazyflie1", -2, -2, 0, 2, 2, 1),
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
-        # Drone("crazyflie3", 1.1, -2.5, 1, -0.5, 1.5, 1.2),
+        Drone("crazyflie3", 1.1, -2.5, 1, -0.5, 1.5, 1.2),
         # Drone("crazyflie4", 2, 2, -2, -0.0, 1.5, 1.2),
         Drone("crazyflie5", 0, 0, 1, 2, 1, 1.2)
     ]

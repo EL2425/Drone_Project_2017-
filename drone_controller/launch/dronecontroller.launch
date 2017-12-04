@@ -10,16 +10,15 @@
 
 <!-- Starting Group for each node -->
   <include file="$(find drone_controller)/launch/CrazyFlie.launch">
-    <arg name="tf_prefix" value="crazyflie4"/>
-    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A4"/>
-    <!-- Default is WayPoint:=WayPoint1 TimeWayPoint:=TimeWayPoint1 -->
+    <arg name="tf_prefix" value="crazyflie3"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7DE"/>
     <arg name="WayPoint" value="WayPoint4"/>
     <arg name="TimeWayPoint" value="TimeWayPoint4"/>
   </include>
+
   <include file="$(find drone_controller)/launch/CrazyFlie.launch">
     <arg name="tf_prefix" value="crazyflie5"/>
     <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A5"/>
-    <!-- Default is WayPoint:=WayPoint1 TimeWayPoint:=TimeWayPoint1 -->
     <arg name="WayPoint" value="WayPoint4"/>
     <arg name="TimeWayPoint" value="TimeWayPoint4"/>
   </include>
@@ -27,5 +26,6 @@
   <node name="trajectory_generator"
         pkg="trajectory_generator"
         type="TrajectoryGenerator.py"
+        output="screen"
   />
 </launch>
