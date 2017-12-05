@@ -5,19 +5,19 @@
 import numpy as np
 import rospy
 import sys
-from rosplan_dispatch_msgs.msg import * 
+from rosplan_dispatch_msgs.msg import *
 from planner.msg import action_msg, action_dict
 from geometry_msgs.msg import Vector3
 import pickle
 
 class ActionProcess:
-	
+
 	def __init__(self):
 		rospy.init_node('action_server')
 		self.action_dispatch = rospy.Subscriber('/kcl_rosplan/plan', CompletePlan, self.get_complete_plan)
 		self.pub_action_dictionary = rospy.Publisher('action_dictionary', action_dict, queue_size=1)
 		self.rate = rospy.Rate(1)
-		pickle_in = open("/home/cheerudeep/catkin_ws/src/Drone_Project_2017-/planner/common/waypoints.pickle","rb")
+		pickle_in = open("/home/el2425/catkin_ws/src/Drone_Project_2017-/planner/common/waypoints.pickle","rb")
 		self.name_wp = pickle.load(pickle_in)
 		self.start = 0
 		rospy.loginfo("Action Server Initilized")
@@ -29,7 +29,7 @@ class ActionProcess:
 		self.action_dispatch_times = np.zeros((self.NumberofActions,1))
 		Test_dict = {}
 		for i in range(0,len(self.complete_plan.plan)):
-			self.action_dispatch_times[i] = round(self.complete_plan.plan[i].dispatch_time)	
+			self.action_dispatch_times[i] = round(self.complete_plan.plan[i].dispatch_time)
 			key = 'action_id_' + str(i)
 			Test_dict[key] = 0
 		rospy.set_param('completed_actions',Test_dict)
@@ -49,12 +49,12 @@ class ActionProcess:
 					drone = {}
 					hold_dispatch = [self.complete_plan.plan[i]]
 					# Extract Mode and Covert to WayPoints
-					drone['packet_valid'] = 1 
+					drone['packet_valid'] = 1
 					drone['mode'] = hold_dispatch[0].name
 					drone['name'] = hold_dispatch[0].parameters[0].value
 					drone['action_id'] = hold_dispatch[0].action_id
 					if(hold_dispatch[0].name == 'load'):
-						drone['waypoint'] = self.name_wp[hold_dispatch[0].parameters[2].value]	
+						drone['waypoint'] = self.name_wp[hold_dispatch[0].parameters[2].value]
 						drone['waypoint_valid'] = 0
 					elif(hold_dispatch[0].name == 'takeoff'):
 						drone['waypoint'] = self.name_wp[drone['name'] + '_takeoff']
@@ -86,7 +86,7 @@ class ActionProcess:
 			if(Sucess == 0):
 				rospy.loginfo("Error Occured")
 		self.pub_action_dictionary.publish(action_dict(self.Dispatch_Publish))
-		
+
 		#drone['waypoint'] = {'x': 0,'y': 0,'z': 0}
 		#print(drone['waypoint']['x'])
 
@@ -94,13 +94,10 @@ class ActionProcess:
 		while not rospy.is_shutdown():
 			if(self.start == 1):
 				self.dispatch_plan()
-				#rospy.loginfo("Action Server Running")		
+				#rospy.loginfo("Action Server Running")
 			self.rate.sleep()
 
 
 if __name__ == '__main__':
 	actionclass = ActionProcess()
 	actionclass.run()
-
-
-

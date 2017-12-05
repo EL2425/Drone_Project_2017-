@@ -8,6 +8,7 @@ from scipy.optimize import minimize
 import time
 import matplotlib.pyplot as plt
 import os as os
+from copy import copy
 from itertools import combinations, cycle
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -28,9 +29,11 @@ class TrajectoryGenerator(object):
         self.d1 = 0.3           # Distance a drone can move in each direction in a timestep [m]
         self.drones = drones
         self.N = len(drones)
+        self.active_drones = []
+        self.active_drones_safe = []
         self.T = time_steps
         self.dim = 3
-        self.x_prev = np.array(self.get_current_states()*self.T)
+        self.x_prev = np.array(self.get_target_states()*self.T)
         self.x_target = []
 
         rospy.init_node('trajectory_generator')
@@ -43,6 +46,12 @@ class TrajectoryGenerator(object):
         for action in data.actionmessages:
             for d in self.drones:
                 if d.tf_prefix == action.drone_name:
+                    if action.drone_mode == 'move':
+                        if d not in self.active_drones:
+                            self.active_drones.append(d)
+                    else:
+                        if d in self.active_drones:
+                            self.active_drones.remove(d)
                     d.set_action(action)
                     break
 
@@ -60,9 +69,14 @@ class TrajectoryGenerator(object):
         collision_sum=0
         N = self.N
         D = self.dim
+        inactive_drones = []
+        for drone in self.drones:
+            if drone not in self.active_drones_safe:
+                inactive_drones.append(drone.get_state())
         for t in range(self.T):
             curr_t = X[t*D:(t+1)*N*D]
             d = [curr_t[n*D:(n+1)*D] for n in range(N)]
+            d = d + inactive_drones
             for i,j in combinations(d,2):
                 collision_sum += 1/(self.Q2*(self.norm(i-j)**2)+1**-18)
         return self.Q1*dist + collision_sum
@@ -75,7 +89,7 @@ class TrajectoryGenerator(object):
 
     def distance_change_constraint(self,x):
         constraint=[]
-        N = self.N
+        N = len(self.active_drones_safe)
         D = self.dim
         prev_t = self.x_prev[0:N*D]
         for t in range(self.T):
@@ -96,8 +110,8 @@ class TrajectoryGenerator(object):
     def calculate_boundaries(self):
         boundaries = []
         for t in range(1,self.T+1):
-            for n in range(self.N):
-                state = self.drones[n].get_state()
+            for d in self.active_drones_safe:
+                state = d.get_state()
                 boundaries.append(tuple([state[0]-t*self.d1,
                                             state[0]+t*self.d1]))
                 boundaries.append(tuple([state[1]-t*self.d1,
@@ -107,12 +121,17 @@ class TrajectoryGenerator(object):
         return boundaries
 
     def get_target_states(self):
-        states_lists = [d.get_target() for d in self.drones]
+        states_lists = [d.get_target() for d in self.active_drones_safe]
         state_one_list = [y for x in states_lists for y in x]
         return state_one_list
 
     def get_current_states(self):
         states_lists = [d.get_state() for d in self.drones]
+        state_one_list = [y for x in states_lists for y in x]
+        return state_one_list
+
+    def get_active_states(self):
+        states_lists = [d.get_state() for d in self.active_drones_safe]
         state_one_list = [y for x in states_lists for y in x]
         return state_one_list
 
@@ -123,42 +142,44 @@ class TrajectoryGenerator(object):
     def calc_trajectory(self):
 
         [d.update_state() for d in self.drones]
+        self.active_drones_safe = copy(self.active_drones)
         self.x_target = self.get_target_states()
-        self.x_prev = self.get_current_states()*self.T
+        self.x_prev = self.get_active_states()*self.T
         start = time.time()
 
-        con = (
-            {
-                'type': 'ineq',
-                'fun': self.inequality_constraints
-            }
-        )
+        if len(self.x_prev) != 0:
+            con = (
+                {
+                    'type': 'ineq',
+                    'fun': self.inequality_constraints
+                }
+            )
 
-        bnd = tuple(self.calculate_boundaries())
+            bnd = tuple(self.calculate_boundaries())
 
-        res = minimize(
-            self.obj_func,
-            self.x_prev,
-            bounds=bnd,
-            #constraints=con,
-            method='SLSQP',
-            options={
-                'disp': False,
-                'maxiter': 1000,
-                #'ftol': 0.00001
-            }
-        )
+            res = minimize(
+                self.obj_func,
+                self.x_prev,
+                bounds=bnd,
+                #constraints=con,
+                method='SLSQP',
+                options={
+                    'disp': False,
+                    'maxiter': 1000,
+                    #'ftol': 0.00001
+                }
+            )
 
-        self.pub_exit_mode.publish(bool(res.success))
-        #self.x_prev = res.x
+            self.pub_exit_mode.publish(bool(res.success))
+            #self.x_prev = res.x
 
-        for d, n in zip(self.drones, range(self.N)):
-            x = res.x[n*self.dim]
-            y = res.x[n*self.dim + 1]
-            z = res.x[n*self.dim + 2]
-            d.set_wp(x, y, z)
+            for d, n in zip(self.active_drones, range(len(self.active_drones))):
+                x = res.x[n*self.dim]
+                y = res.x[n*self.dim + 1]
+                z = res.x[n*self.dim + 2]
+                d.set_wp(x, y, z)
 
-        [d.publish_wp() for d in self.drones]
+        [(d.publish_wp(), d.check_action_done()) for d in self.drones]
         end=time.time()
 
     def calculate_multiple(self,number_of_iter):
@@ -195,27 +216,44 @@ class TrajectoryGenerator(object):
 
 class Drone(object):
 
-    def __init__(self,tf_prefix,x,y,z,target_x,target_y,target_z):
+    def __init__(self, tf_prefix):
+
+        self.pub_controller = rospy.Publisher('/' + tf_prefix + '/waypoints', Twist, queue_size=10)
+        self.pub_target = rospy.Publisher('/' + tf_prefix + '/target', Twist, queue_size=10)
+        self.sub_mocap = rospy.ServiceProxy('/' + tf_prefix + '/mocap_srv', dronestaterequest)
+
         self.tf_prefix = tf_prefix
         self.action = 'idle'
         self.action_id = -1
-        self.x = x
-        self.y = y
-        self.z = z
-        self.target_x = target_x
-        self.target_y = target_y
-        self.target_z = target_z
-        self.wp_x = 0
-        self.wp_y = 0
-        self.wp_z = 0
+        self.timer = 0
 
-        self.pub_controller = rospy.Publisher('/' + self.tf_prefix + '/waypoints', Twist, queue_size=10)
-        self.pub_target = rospy.Publisher('/' + self.tf_prefix + '/target', Twist, queue_size=10)
-        self.sub_mocap = rospy.ServiceProxy('/' + self.tf_prefix + '/mocap_srv', dronestaterequest)
+        mocap_state = self.sub_mocap()
+
+        self.x = mocap_state.state.x
+        self.y = mocap_state.state.x
+        self.z = mocap_state.state.x
+        self.target_x = mocap_state.state.x
+        self.target_y = mocap_state.state.x
+        self.target_z = mocap_state.state.x
+        self.wp_x = mocap_state.state.x
+        self.wp_y = mocap_state.state.x
+        self.wp_z = mocap_state.state.x
+
 
     def set_action(self, action):
-        self.action = action.drone_mode
-        self.action_id = action.action_id
+        if action.action_id != self.action_id:
+            self.action = action.drone_mode
+            self.action_id = action.action_id
+            if action.drone_mode == 'move':
+                self.set_target(action.x, action.y, action.z)
+            if action.drone_mode in ['load', 'unload']:
+                self.timer = rospy.get_time()
+            if action.drone_mode == 'takeoff':
+                self.set_wp(self.x, self.y, 0.7)
+                self.set_target(self.x, self.y, 0.7)
+            if action.drone_mode == 'land':
+                self.set_wp(self.x, self.y, 0.25)
+                self.set_target(self.x, self.y, 0.25)
 
     def update_state(self):
         resp = self.sub_mocap()
@@ -233,6 +271,20 @@ class Drone(object):
         self.target_x = x
         self.target_y = y
         self.target_z = z
+
+    def check_action_done(self):
+        if self.action == 'move':
+            dist = np.linalg.norm(np.array(self.get_state()) - np.array(self.get_target()))
+            if dist < 0.1:
+                rospy.set_param('/completed_actions/action_id_' + str(self.action_id), 1)
+        elif self.action in ['load', 'unload']:
+            curr_time = rospy.get_time()
+            print(curr_time - self.timer)
+            if curr_time - self.timer > 3.0:
+                rospy.set_param('/completed_actions/action_id_' + str(self.action_id), 1)
+        elif self.action in ['takeoff', 'land']:
+            if np.sqrt((self.target_z - self.z)**2) < 0.05:
+                rospy.set_param('/completed_actions/action_id_' + str(self.action_id), 1)
 
     def publish_wp(self):
         linear = Vector3(self.wp_x, self.wp_y, self.wp_z)
@@ -256,8 +308,8 @@ if __name__ == '__main__':
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
         # Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
         # Drone("crazyflie4", 2, 2, -2, -0.0, 1.5, 1.2),
-        Drone('crazyflie5', 0, 0, 1, 2, 1, 1.2),
-        # Drone('crazyflie6', 0, 0, 0, 0, 0, 0)
+        Drone('crazyflie5'),
+        Drone('crazyflie6')
     ]
 
     trajgen = TrajectoryGenerator(drones, 4)

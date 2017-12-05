@@ -9,7 +9,7 @@
 	<param name="/rosplan/domain_path" value="$(find planner)/common/domain_testproblem.pddl" />
 
 
-	<!-- knowledge base 
+	<!-- knowledge base
 	<node name="rosplan_knowledge_base" pkg="rosplan_knowledge_base" type="knowledgeBase" respawn="false" output="screen" />
 	-->
 
@@ -25,8 +25,6 @@
 		<param name="database_path" value="$(find rosplan_knowledge_base)/common/mongoDB" />
 	</node>
 	<node name="rosplan_scene_message_store" pkg="mongodb_store" type="message_store_node.py" respawn="false" output="log" />
-	
-	
 
 	<!-- planning system -->
 	<node name="rosplan_planning_system" pkg="rosplan_planning_system" type="planner" respawn="false" output="screen">
@@ -36,7 +34,7 @@
 		<param name="strl_file_path" value="$(find rosplan_planning_system)/common/plan.strl" />
 
 		<!-- to run the planner -->
-		<param name="planner_command" value="timeout 10 $(find rosplan_planning_system)/common/bin/popf -n -b DOMAIN PROBLEM" /> 
+		<param name="planner_command" value="timeout 10 $(find rosplan_planning_system)/common/bin/popf -n  DOMAIN PROBLEM" />
 
 
 
@@ -44,6 +42,10 @@
 		<param name="max_dispatch_attempts" value="10" />
 		<param name="dispatch_on_completion" value="false"/>
 		<param name="dispatch_concurrent" value="false"/>
-		
+
 	</node>
+
+  <node name="add_goals" pkg="planner" type="TestAddGoal.py"/>
+  <node name="planner" pkg="planner" type="action_process.py"/>
+
 </launch>
