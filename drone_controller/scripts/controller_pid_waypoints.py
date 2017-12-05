@@ -81,6 +81,7 @@ class Controller:
         )
 
         self.waypoint = State(0, 0, 0, 0, 0, 0)
+        self.step = np.array([0, 0, 0])
 
         # Initialize flightmode - start controller in 'Stop'-mode
         self.flightmode = 'Stop'
@@ -111,18 +112,17 @@ class Controller:
             self.mocap_state = resp.state
 
 
-    def get_target_states(self,CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ): # CurrentROSTime - Started from zero when the controller is started
-        rospy.wait_for_service('generate_state_' + self.tf_prefix)
-        try:
-            generatestate = rospy.ServiceProxy('generate_state_' + self.tf_prefix, GetStates)
-            states = generatestate(CurrentROSTime, PrevPosX, PrevPosY, PrevPosZ)
-            return states
-        except rospy.ServiceException, e:
-            print "Service call failed: %s" % e
-
     def set_waypoint(self, data):
-        self.waypoint = State(data.linear.x, data.linear.y, data.linear.z,
-                              0.0, 0.0, 0.0)
+        self.waypoint = self.mocap_state
+        # TODO: get f_trajgen/f_controller through rosparam
+        rt = 2/30
+        self.step = State(
+            rt*(data.linear.x - self.mocap_state.x),
+            rt*(data.linear.y - self.mocap_state.y),
+            rt*(data.linear.z - self.mocap_state.z),
+            0, 0, 0
+        )
+
 
     def get_target_state(self):
 
@@ -130,24 +130,10 @@ class Controller:
             return self.takeoff_states
         elif self.flightmode == 'Landing':
             return self.landing_states
-        elif self.flightmode == 'FixedWayPoint':
-            return self.fixed_state
-        elif self.flightmode == 'FollowWayPoint':
-            traj_resp = self.get_target_states(
-                rospy.get_time() - self.trajectory_tstart,
-                self.previous_trajgen_state['X'],
-                self.previous_trajgen_state['Y'],
-                self.previous_trajgen_state['Z']
-            )
-            return State(
-                x=traj_resp.PosX,
-                y=traj_resp.PosY,
-                z=traj_resp.PosZ,
-                pitch=0,
-                roll=0,
-                yaw=0
-            )
         elif self.flightmode == 'Waypoint':
+            self.waypoint.x += self.step.x
+            self.waypoint.y += self.step.y
+            self.waypoint.z += self.step.z
             return self.waypoint
         return self.mocap_state
 
