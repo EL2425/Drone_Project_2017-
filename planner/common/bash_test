@@ -1,0 +1,142 @@
+#!/bin/bash
+rosparam set /completed_actions/action_id_0 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_1 1
+echo 1
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_2 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_3 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_4 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_5 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_6 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_7 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_8 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_9 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_10 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_11 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_12 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_13 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_14 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_15 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_16 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_17 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_18 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_19 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_20 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_21 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_22 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_23 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_24 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_25 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_26 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_27 1
+echo 0
+
+sleep 2 
+
+rosparam set /completed_actions/action_id_28 1
