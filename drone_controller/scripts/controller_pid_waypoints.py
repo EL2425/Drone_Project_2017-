@@ -113,15 +113,21 @@ class Controller:
 
 
     def set_waypoint(self, data):
-        self.waypoint = self.mocap_state
-        # TODO: get f_trajgen/f_controller through rosparam
-        rt = 2/30
-        self.step = State(
-            rt*(data.linear.x - self.mocap_state.x),
-            rt*(data.linear.y - self.mocap_state.y),
-            rt*(data.linear.z - self.mocap_state.z),
+        self.waypoint = State(
+            data.linear.x,
+            data.linear.y,
+            data.linear.z,
             0, 0, 0
         )
+        # self.waypoint = self.mocap_state
+        # # TODO: get f_trajgen/f_controller through rosparam
+        # rt = 0.2/30
+        # self.step = State(
+        #     rt*(data.linear.x - self.mocap_state.x),
+        #     rt*(data.linear.y - self.mocap_state.y),
+        #     rt*(data.linear.z - self.mocap_state.z),
+        #     0, 0, 0
+        # )
 
 
     def get_target_state(self):
@@ -131,9 +137,9 @@ class Controller:
         elif self.flightmode == 'Landing':
             return self.landing_states
         elif self.flightmode == 'Waypoint':
-            self.waypoint.x += self.step.x
-            self.waypoint.y += self.step.y
-            self.waypoint.z += self.step.z
+            # self.waypoint.x += self.step.x
+            # self.waypoint.y += self.step.y
+            # self.waypoint.z += self.step.z
             return self.waypoint
         return self.mocap_state
 

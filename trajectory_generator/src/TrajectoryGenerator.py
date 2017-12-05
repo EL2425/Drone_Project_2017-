@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from mocap_node.msg import State, MocapResp
 from mocap_node.srv import *
 from trajectory_generator.srv import *
+from planner.msg import *
 from std_msgs.msg import Bool
 
 class TrajectoryGenerator(object):
@@ -35,8 +36,15 @@ class TrajectoryGenerator(object):
         rospy.init_node('trajectory_generator')
         self.target_server = rospy.Service('set_target', SetTarget, self.set_target)
         self.pub_exit_mode = rospy.Publisher('exit_mode', Bool, queue_size=10)
+        self.sub_planner = rospy.Subscriber('action_dictionary', action_dict, self.set_plan)
         self.rate = rospy.Rate(5)
 
+    def set_plan(self, data):
+        for action in data.actionmessages:
+            for d in self.drones:
+                if d.tf_prefix == action.drone_name:
+                    d.set_action(action)
+                    break
 
     def obj_func(self,X):
         x=np.array(X)
@@ -120,11 +128,11 @@ class TrajectoryGenerator(object):
         start = time.time()
 
         con = (
-                {
-                    'type': 'ineq',
-                    'fun': self.inequality_constraints
-                }
-            )
+            {
+                'type': 'ineq',
+                'fun': self.inequality_constraints
+            }
+        )
 
         bnd = tuple(self.calculate_boundaries())
 
@@ -132,7 +140,7 @@ class TrajectoryGenerator(object):
             self.obj_func,
             self.x_prev,
             bounds=bnd,
-            constraints=con,
+            #constraints=con,
             method='SLSQP',
             options={
                 'disp': False,
@@ -189,6 +197,8 @@ class Drone(object):
 
     def __init__(self,tf_prefix,x,y,z,target_x,target_y,target_z):
         self.tf_prefix = tf_prefix
+        self.action = 'idle'
+        self.action_id = -1
         self.x = x
         self.y = y
         self.z = z
@@ -202,6 +212,10 @@ class Drone(object):
         self.pub_controller = rospy.Publisher('/' + self.tf_prefix + '/waypoints', Twist, queue_size=10)
         self.pub_target = rospy.Publisher('/' + self.tf_prefix + '/target', Twist, queue_size=10)
         self.sub_mocap = rospy.ServiceProxy('/' + self.tf_prefix + '/mocap_srv', dronestaterequest)
+
+    def set_action(self, action):
+        self.action = action.drone_mode
+        self.action_id = action.action_id
 
     def update_state(self):
         resp = self.sub_mocap()
@@ -240,10 +254,10 @@ if __name__ == '__main__':
     drones = [
         # Drone("crazyflie1", -2, -2, 0, 2, 2, 1),
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
-        Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
+        # Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
         # Drone("crazyflie4", 2, 2, -2, -0.0, 1.5, 1.2),
         Drone('crazyflie5', 0, 0, 1, 2, 1, 1.2),
-        Drone('crazyflie6', 0, 0, 0, 0, 0, 0)
+        # Drone('crazyflie6', 0, 0, 0, 0, 0, 0)
     ]
 
     trajgen = TrajectoryGenerator(drones, 4)
