@@ -12,24 +12,24 @@
 
 
 <!-- Starting Group for each node -->
-<!--
+
   <include file="$(find drone_controller)/launch/CrazyFlie.launch">
-    <arg name="tf_prefix" value="crazyflie3"/>
-    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7DE"/>
-    <arg name="WayPoint" value="WayPoint4"/>
-    <arg name="TimeWayPoint" value="TimeWayPoint4"/>
-  </include>
--->
-  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
-    <arg name="tf_prefix" value="crazyflie5"/>
-    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A5"/>
+    <arg name="tf_prefix" value="crazyflie1"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A1"/>
     <arg name="WayPoint" value="WayPoint4"/>
     <arg name="TimeWayPoint" value="TimeWayPoint4"/>
   </include>
 
   <include file="$(find drone_controller)/launch/CrazyFlie.launch">
-    <arg name="tf_prefix" value="crazyflie6"/>
-    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A6"/>
+    <arg name="tf_prefix" value="crazyflie2"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A2"/>
+    <arg name="WayPoint" value="WayPoint4"/>
+    <arg name="TimeWayPoint" value="TimeWayPoint4"/>
+  </include>
+
+  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
+    <arg name="tf_prefix" value="crazyflie3"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A3"/>
     <arg name="WayPoint" value="WayPoint4"/>
     <arg name="TimeWayPoint" value="TimeWayPoint4"/>
   </include>
@@ -39,4 +39,5 @@
         type="TrajectoryGenerator.py"
         output="screen"
   />
+
 </launch>

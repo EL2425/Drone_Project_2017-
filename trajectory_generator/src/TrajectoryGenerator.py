@@ -65,9 +65,9 @@ class TrajectoryGenerator(object):
         #dist = np.sqrt(s)
         #dist = pos_last - self.x_target)
 
-        #penalty for two drones to be close to each other.
+        #penalty for two drones being close to each other.
         collision_sum=0
-        N = self.N
+        N = len(self.active_drones)
         D = self.dim
         inactive_drones = []
         for drone in self.drones:
@@ -78,7 +78,7 @@ class TrajectoryGenerator(object):
             d = [curr_t[n*D:(n+1)*D] for n in range(N)]
             d = d + inactive_drones
             for i,j in combinations(d,2):
-                collision_sum += 1/(self.Q2*(self.norm(i-j)**2)+1**-18)
+                collision_sum += 1/(self.Q2*(self.norm(np.array(i)-np.array(j))**2)+1**-18)
         return self.Q1*dist + collision_sum
 
     def norm(self,vector):
@@ -140,7 +140,6 @@ class TrajectoryGenerator(object):
         return True
 
     def calc_trajectory(self):
-
         [d.update_state() for d in self.drones]
         self.active_drones_safe = copy(self.active_drones)
         self.x_target = self.get_target_states()
@@ -307,10 +306,9 @@ if __name__ == '__main__':
         # Drone("crazyflie1", -2, -2, 0, 2, 2, 1),
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
         # Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
-        # Drone("crazyflie4", 2, 2, -2, -0.0, 1.5, 1.2),
-        Drone('crazyflie5'),
-        Drone('crazyflie6')
+        Drone('crazyflie1'),
+        Drone('crazyflie2'),
+        Drone('crazyflie3')
     ]
-
     trajgen = TrajectoryGenerator(drones, 4)
     trajgen.calculate_multiple(100)

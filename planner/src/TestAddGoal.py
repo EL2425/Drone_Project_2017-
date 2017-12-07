@@ -2,7 +2,7 @@
 from pddl_functions import *
 
 supplies = ['package1', 'package2', 'package3']
-drones = ['crazyflie5', 'crazyflie6']
+drones = ['crazyflie1', 'crazyflie2', 'crazyflie3']
 location = ['warehouse1','warehouse2','customer1','customer2','customer3']
 
 def add_knowledge():
@@ -17,41 +17,46 @@ def add_knowledge():
         add_instance('location',item)
 
     '''
-    add_fact('at-drone',{'d':'crazyflie5', 'l':'warehouse1'})
+    add_fact('at-drone',{'d':'crazyflie1', 'l':'warehouse1'})
     add_fact('at-package',{'p':'package1', 'l':'warehouse1'})
     add_fact('at-package',{'p':'package2', 'l':'warehouse2'})
     add_fact('at-package',{'p':'package3', 'l':'warehouse1'})
-    add_fact('drone-empty',{'d':'crazyflie5'})
-    add_fact('drone-ground',{'d':'crazyflie5'})
+    add_fact('drone-empty',{'d':'crazyflie1'})
+    add_fact('drone-ground',{'d':'crazyflie1'})
 
     add_goal('at-package',{'p':'package1','l':'customer1'})
     add_goal('at-package',{'p':'package2','l':'customer2'})
     add_goal('at-package',{'p':'package3','l':'customer3'})
     #add_goal('at-package',{'p':'package4','l':'customer3'})
-    add_goal('at-drone',{'d':'crazyflie5','l':'warehouse1'})
-    add_goal('drone-ground',{'d':'crazyflie5'})
+    add_goal('at-drone',{'d':'crazyflie1','l':'warehouse1'})
+    add_goal('drone-ground',{'d':'crazyflie1'})
     '''
 
-    add_fact('at-drone',{'d':'crazyflie5', 'l':'warehouse1'})
-    add_fact('at-drone',{'d':'crazyflie6', 'l':'warehouse2'})
+    add_fact('at-drone',{'d':'crazyflie1', 'l':'warehouse1'})
+    add_fact('at-drone',{'d':'crazyflie2', 'l':'warehouse1'})
+    add_fact('at-drone',{'d':'crazyflie3', 'l':'warehouse2'})
     add_fact('at-package',{'p':'package1', 'l':'warehouse1'})
     add_fact('at-package',{'p':'package2', 'l':'warehouse2'})
     add_fact('at-package',{'p':'package3', 'l':'warehouse1'})
     #add_fact('at-package',{'p':'package4', 'l':'warehouse2'})
-    add_fact('drone-empty',{'d':'crazyflie5'})
-    add_fact('drone-ground',{'d':'crazyflie5'})
-    add_fact('drone-empty',{'d':'crazyflie6'})
-    add_fact('drone-ground',{'d':'crazyflie6'})
+    add_fact('drone-empty',{'d':'crazyflie1'})
+    add_fact('drone-ground',{'d':'crazyflie1'})
+    add_fact('drone-empty',{'d':'crazyflie2'})
+    add_fact('drone-ground',{'d':'crazyflie2'})
+    add_fact('drone-empty',{'d':'crazyflie3'})
+    add_fact('drone-ground',{'d':'crazyflie3'})
 
     # Goals
     add_goal('at-package',{'p':'package1','l':'customer1'})
     add_goal('at-package',{'p':'package2','l':'customer2'})
     add_goal('at-package',{'p':'package3','l':'customer3'})
     #add_goal('at-package',{'p':'package4','l':'customer3'})
-    add_goal('at-drone',{'d':'crazyflie5','l':'warehouse1'})
-    add_goal('at-drone',{'d':'crazyflie6','l':'warehouse2'})
-    add_goal('drone-ground',{'d':'crazyflie5'})
-    add_goal('drone-ground',{'d':'crazyflie6'})
+    add_goal('at-drone',{'d':'crazyflie1','l':'warehouse1'})
+    add_goal('at-drone',{'d':'crazyflie2','l':'warehouse1'})
+    add_goal('at-drone',{'d':'crazyflie3','l':'warehouse2'})
+    add_goal('drone-ground',{'d':'crazyflie1'})
+    add_goal('drone-ground',{'d':'crazyflie2'})
+    add_goal('drone-ground',{'d':'crazyflie3'})
 
 
 """
@@ -59,19 +64,19 @@ def add_knowledge():
 (at-package package1 customer1)
 (at-package package2 customer2)
 (at-package package3 customer3)
-(at-drone crazyflie5 warehouse1)
+(at-drone crazyflie1 warehouse1)
 (at-drone crazyflie6 warehouse2)
-(drone-ground crazyflie5)
+(drone-ground crazyflie1)
 (drone-ground crazyflie6)
 
 
-(at-drone crazyflie5 warehouse1)
+(at-drone crazyflie1 warehouse1)
 (at-drone crazyflie6 warehouse2)
 (at-package package1 warehouse1)
 (at-package package2 warehouse2)
 (at-package package3 warehouse1)
-(drone-empty crazyflie5)
-(drone-ground crazyflie5)
+(drone-empty crazyflie1)
+(drone-ground crazyflie1)
 (drone-empty crazyflie6)
 (drone-ground crazyflie6)
 

@@ -5,16 +5,16 @@
     ki: 1.0
     minOutput: -10.0
     maxOutput: 10.0
-    integratorMin: -0.1
-    integratorMax: 0.1
+    integratorMin: -1.0
+    integratorMax: 1.0
   Y:
     kp: 9.5
     kd: 10.0
     ki: 0.5
     minOutput: -10.0
     maxOutput: 10.0
-    integratorMin: -0.1
-    integratorMax: 0.1
+    integratorMin: -1.0
+    integratorMax: 1.0
   Z:
     kp: 9000.0
     kd: 17000.0
