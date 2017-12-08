@@ -6,7 +6,7 @@
 	<param name="/rosplan/planner_path" value="$(find rosplan_planning_system)/common/bin/" />
 
 	<!-- domain file -->
-	<param name="/rosplan/domain_path" value="$(find planner)/common/domain_testproblem.pddl" />
+	<param name="/rosplan/domain_path" value="$(find planner)/common/NewProblem/domain_testproblem.pddl" />
 
 
 	<!-- knowledge base
@@ -38,14 +38,16 @@
 
 
 
-		<param name="generate_default_problem" value="true" />
+		<param name="generate_default_problem" value="false" />
 		<param name="max_dispatch_attempts" value="10" />
 		<param name="dispatch_on_completion" value="false"/>
 		<param name="dispatch_concurrent" value="false"/>
 
 	</node>
 
-  <node name="add_goals" pkg="planner" type="TestAddGoal.py"/>
+  <!--
+	<node name="add_goals" pkg="planner" type="TestAddGoal.py"/>
+-->
   <node name="planner" pkg="planner" type="action_process.py"/>
 
 </launch>
