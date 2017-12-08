@@ -229,14 +229,14 @@ class Drone(object):
         mocap_state = self.sub_mocap()
 
         self.x = mocap_state.state.x
-        self.y = mocap_state.state.x
-        self.z = mocap_state.state.x
+        self.y = mocap_state.state.y
+        self.z = mocap_state.state.z
         self.target_x = mocap_state.state.x
-        self.target_y = mocap_state.state.x
-        self.target_z = mocap_state.state.x
+        self.target_y = mocap_state.state.y
+        self.target_z = mocap_state.state.z
         self.wp_x = mocap_state.state.x
-        self.wp_y = mocap_state.state.x
-        self.wp_z = mocap_state.state.x
+        self.wp_y = mocap_state.state.y
+        self.wp_z = mocap_state.state.z
 
 
     def set_action(self, action):
