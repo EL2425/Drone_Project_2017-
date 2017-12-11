@@ -58,6 +58,9 @@ find_package(catkin REQUIRED COMPONENTS
  add_service_files(
    FILES
    dronestaterequest.srv
+   AddAll.srv
+   AddDrone.srv
+   FindDrones.srv
  )
 
 ## Generate actions in the 'action' folder
