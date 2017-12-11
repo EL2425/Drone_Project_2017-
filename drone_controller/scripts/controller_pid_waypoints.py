@@ -129,7 +129,7 @@ class Controller:
         # )
 
     def set_target(self, data):
-        self.target = State(data[0], data[1], data[2], 0 0 0)
+        self.target = State(data.x, data.y, data.z, 0, 0, 0)
         return True
 
     def get_target_state(self):
