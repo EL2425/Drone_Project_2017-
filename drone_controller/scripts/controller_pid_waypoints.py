@@ -25,12 +25,13 @@ class Controller:
         self.rate = rospy.Rate(30)
 
         self.mode_srv = rospy.Service('SetMode', SetMode, self.set_flight_mode)
+        self.target_srv = rospy.Service('set_target', SetTarget, self.set_target)
 
         # Initialize the zero-message
         zerosstop = Vector3(0.0, 0.0, 0.0)
         self.twist_stop = Twist(zerosstop, zerosstop)
 
-        # Intialize the PID controllers
+        # Initialize the PID controllers
         self.pitchcontrol = pid_controller(tf_prefix, 'X')
         self.rollcontrol = pid_controller(tf_prefix, 'Y')
         self.yawcontrol = pid_controller(tf_prefix, 'Yaw')
@@ -80,6 +81,7 @@ class Controller:
             yaw=self.fixed_state[3]
         )
 
+        self.target = State(0, 0, 0, 0, 0, 0)
         self.waypoint = State(0, 0, 0, 0, 0, 0)
         self.step = np.array([0, 0, 0])
 
@@ -87,11 +89,8 @@ class Controller:
         self.flightmode = 'Stop'
         # Possible flightmodes available
         self.modes = [
-            'TakeOff',
-            'FollowWayPoint',
-            'FixedWayPoint',
+            'Manual',
             'Waypoint',
-            'Landing',
             'Stop'
         ]
 
@@ -129,13 +128,13 @@ class Controller:
         #     0, 0, 0
         # )
 
+    def set_target(self, data):
+        self.target = State(data[0], data[1], data[2], 0 0 0)
+        return True
 
     def get_target_state(self):
-
-        if self.flightmode == 'TakeOff':
-            return self.takeoff_states
-        elif self.flightmode == 'Landing':
-            return self.landing_states
+        if self.flightmode == 'Manual':
+            return self.target
         elif self.flightmode == 'Waypoint':
             # self.waypoint.x += self.step.x
             # self.waypoint.y += self.step.y
