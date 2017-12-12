@@ -13,6 +13,7 @@ def trajectoryPlot( bagfile, crazyflie):
 	mocapstatesDir='/'+str(crazyflie)+'/mocap_state'
 	wpstatesDir='/'+str(crazyflie)+'/waypoints'
 	tgstateDir = '/'+str(crazyflie)+'/target'
+	cmdDir = '/'+str(crazyflie)+'/cmd_vel'
 	exitmodeDir = '/exit_mode'
 	msg=[]
 	msg_t=[]
@@ -22,6 +23,8 @@ def trajectoryPlot( bagfile, crazyflie):
 	msg_tg_t = []
 	msg_em = []
 	msg_em_t = []
+	msg_cmd = []
+	msg_cmd_t = []
 	for topic, m, t in bag.read_messages(topics=[mocapstatesDir]):
 		msg.append(m)
 		msg_t.append(float(t.secs) + float(t.nsecs) / 1e9)
@@ -34,11 +37,14 @@ def trajectoryPlot( bagfile, crazyflie):
 	for topic, m, t in bag.read_messages(topics=[exitmodeDir]):
 		msg_em.append(int(m.data))
 		msg_em_t.append(float(t.secs) + float(t.nsecs) / 1e9)
+	for topic, m, t in bag.read_messages(topics=[cmdDir]):
+		msg_cmd.append(m)
+		msg_cmd_t.append(float(t.secs) + float(t.nsecs) / 1e9)
 
 	#t0=msg_t[0]
 	#msg_t = [t-t0 for t in msg_t] #Removing the initial time to start at 0
 	#t_tg0=msg_tg_t[0]
-	#msg_tg_t = [t-t_tg0 for t in msg_tg_t] 
+	#msg_tg_t = [t-t_tg0 for t in msg_tg_t]
 	bag.close()
 	#print(msg_t)
 	#print(type(msg_t[0]))
@@ -54,6 +60,10 @@ def trajectoryPlot( bagfile, crazyflie):
 	x_tg = [tw.linear.x for tw in msg_tg]
 	y_tg = [tw.linear.y for tw in msg_tg]
 	z_tg = [tw.linear.z for tw in msg_tg]
+
+ 	pitch = [tw.linear.x for tw in msg_cmd]
+	roll = [tw.linear.y for tw in msg_cmd]
+	thrust = [tw.linear.z for tw in msg_cmd]
 
 	errX=[]
 	errY=[]
@@ -125,6 +135,21 @@ def trajectoryPlot( bagfile, crazyflie):
 	plt.title('Max err = '+ str(maxErrZ)+'    MSE = '+str(MSEz))
 	plt.xlabel('time (s)')
 
+	fig4=plt.figure()
+	#ax2=fig2.add_subplot(311)
+	plt.subplot(311)
+	plt.plot(msg_cmd_t, pitch, marker='.')
+	plt.ylabel('pitch')
+	#ax3=fig2.add_subplot(312)
+	plt.subplot(312)
+	plt.plot(msg_cmd_t, roll, marker='.')
+	plt.ylabel('roll')
+	#ax4=fig2.add_subplot(313)
+	plt.subplot(313)
+	plt.plot(msg_cmd_t, thrust, marker='.')
+	plt.ylabel('thrust')
+	plt.xlabel('time (s)')
+
 
 	plt.show()
 	return()
@@ -140,8 +165,3 @@ if __name__ == '__main__':
 		bagfile = sys.argv[1]
 		crazyflie = sys.argv[2]
 	trajectoryPlot( bagfile, crazyflie)
-
-
-
-
-
