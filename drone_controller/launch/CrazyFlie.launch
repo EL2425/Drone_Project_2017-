@@ -1,8 +1,6 @@
 <launch>
   <arg name="tf_prefix"/>
   <arg name="uri_drone"/>
-  <arg name="WayPoint" default = "WayPoint1"/>
-  <arg name="TimeWayPoint" default = "TimeWayPoint1"/>
 
   <group ns="$(arg tf_prefix)">
 
@@ -18,18 +16,11 @@
   <rosparam command="load"
             file="$(find drone_controller)/gains/$(arg tf_prefix)_gains_pid.yaml"
   />
+  <!--
   <rosparam command="load"
             file="$(find drone_controller)/gains/$(arg tf_prefix)_params_controller.yaml"
   />
-
-  <!-- Start Trajectory Generator 
-  <node name="trajectory_generator"
-        pkg="trajectory_generator"
-        type="TrajectoryGenerator.py"
-        args="$(arg WayPoint) $(arg TimeWayPoint) $(arg tf_prefix)"
-  />
   -->
-
   <!-- Add drone to the crazyflie server -->
   <include file="$(find crazyflie_driver)/launch/crazyflie_add.launch">
     <arg name="tf_prefix" value="$(arg tf_prefix)"/>

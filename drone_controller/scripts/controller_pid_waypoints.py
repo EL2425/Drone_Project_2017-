@@ -53,33 +53,33 @@ class Controller:
 
         # If the controller enters Take Off Mode - It will go to these states x,y,z - Yaw by default set to zero.
         # TODO: clean up how the states are expressed in the parameters
-        self.takeoff_states = np.array(rospy.get_param('takeoff_states'))
-        self.takeoff_states = State(
-            x=self.takeoff_states[0],
-            y=self.takeoff_states[1],
-            z=self.takeoff_states[2],
-            pitch=0.0,
-            roll=0.0,
-            yaw=0.0
-        )
-        self.landing_states = np.array(rospy.get_param('landing_states'))
-        self.landing_states = State(
-            x=self.landing_states[0],
-            y=self.landing_states[1],
-            z=self.landing_states[2],
-            pitch=0.0,
-            roll=0.0,
-            yaw=0.0
-        )
-        self.fixed_state = np.array(rospy.get_param('FixedWayPointYaw'))
-        self.fixed_state = State(
-            x=self.fixed_state[0],
-            y=self.fixed_state[1],
-            z=self.fixed_state[2],
-            pitch=0.0,
-            roll=0.0,
-            yaw=self.fixed_state[3]
-        )
+        # self.takeoff_states = np.array(rospy.get_param('takeoff_states'))
+        # self.takeoff_states = State(
+        #     x=self.takeoff_states[0],
+        #     y=self.takeoff_states[1],
+        #     z=self.takeoff_states[2],
+        #     pitch=0.0,
+        #     roll=0.0,
+        #     yaw=0.0
+        # )
+        # self.landing_states = np.array(rospy.get_param('landing_states'))
+        # self.landing_states = State(
+        #     x=self.landing_states[0],
+        #     y=self.landing_states[1],
+        #     z=self.landing_states[2],
+        #     pitch=0.0,
+        #     roll=0.0,
+        #     yaw=0.0
+        # )
+        # self.fixed_state = np.array(rospy.get_param('FixedWayPointYaw'))
+        # self.fixed_state = State(
+        #     x=self.fixed_state[0],
+        #     y=self.fixed_state[1],
+        #     z=self.fixed_state[2],
+        #     pitch=0.0,
+        #     roll=0.0,
+        #     yaw=self.fixed_state[3]
+        # )
 
         self.target = State(0, 0, 0, 0, 0, 0)
         self.waypoint = State(0, 0, 0, 0, 0, 0)

@@ -40,6 +40,7 @@ class TrajectoryGenerator(object):
         self.target_server = rospy.Service('set_target', SetTarget, self.set_target)
         self.pub_exit_mode = rospy.Publisher('exit_mode', Bool, queue_size=10)
         self.sub_planner = rospy.Subscriber('action_dictionary', action_dict, self.set_plan)
+        self.srv_add_traj = rospy.Service('add_drone_traj', AddDroneTraj, self.add_drone_traj)
         self.rate = rospy.Rate(5)
 
     def set_plan(self, data):
@@ -54,6 +55,12 @@ class TrajectoryGenerator(object):
                             self.active_drones.remove(d)
                     d.set_action(action)
                     break
+
+    def add_drone_traj(self, data):
+        for d in self.drones:
+            if data.drone == d.tf_prefix and d not in self.active_drones:
+                self.active_drones.append(d)
+        return True
 
     def obj_func(self,X):
         x=np.array(X)
@@ -220,6 +227,7 @@ class Drone(object):
         self.pub_controller = rospy.Publisher('/' + tf_prefix + '/waypoints', Twist, queue_size=10)
         self.pub_target = rospy.Publisher('/' + tf_prefix + '/target', Twist, queue_size=10)
         self.sub_mocap = rospy.ServiceProxy('/' + tf_prefix + '/mocap_srv', dronestaterequest)
+        self.srv_target = rospy.Service('/' + tf_prefix + '/set_traj_target', SetTrajTarget, self.set_target_srv)
 
         self.tf_prefix = tf_prefix
         self.action = 'idle'
@@ -271,6 +279,12 @@ class Drone(object):
         self.target_y = y
         self.target_z = z
 
+    def set_target_srv(self, data):
+        self.target_x = data.x
+        self.target_y = data.y
+        self.target_z = data.z
+        return True
+
     def check_action_done(self):
         if self.action == 'move':
             dist = np.linalg.norm(np.array(self.get_state()) - np.array(self.get_target()))
@@ -306,7 +320,7 @@ if __name__ == '__main__':
         # Drone("crazyflie1", -2, -2, 0, 2, 2, 1),
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
         # Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
-        Drone('crazyflie1'),
+        # Drone('crazyflie1'),
         Drone('crazyflie2'),
         Drone('crazyflie3')
     ]
