@@ -5,6 +5,7 @@ import rospy
 import sys
 from trajectory_generator.srv import *
 from geometry_msgs.msg import Twist, Vector3
+from std_msgs.msg import Float32
 from mocap_node.srv import dronestaterequest
 from mocap_node.msg import State, MocapResp
 from drone_controller.srv import SetMode
@@ -168,12 +169,12 @@ class Controller:
                 out_thrust = self.thrustcontrol.pid_calculate(target_state.z, current_state.z)
 
                 # TODO: check if these are RADs or DEGs
-                ctheta = np.cos(current_state.pitch)
-                stheta = np.sin(current_state.pitch)
+                # ctheta = np.cos(current_state.pitch)
+                # stheta = np.sin(current_state.pitch)
                 cpsi = np.cos(current_state.yaw)
                 spsi = np.sin(current_state.yaw)
-                cphi = np.cos(current_state.roll)
-                sphi = np.sin(current_state.roll)
+                # cphi = np.cos(current_state.roll)
+                # sphi = np.sin(current_state.roll)
 
                 rot_matrix = np.array([
                     [cpsi, spsi, 0.0],
@@ -191,17 +192,25 @@ class Controller:
                     ])
                 )
                 #rotated_values[2,0] = 0
-                linear = Vector3(rot_vals[0], -rot_vals[1], out_thrust+43000.0)
-                angular = Vector3(0.0, 0.0, -rot_vals[2])
+
+                # Saturate output
+                thrust = max(min(out_thrust+43000.0, 65500.0), 20000)
+                pitch = max(min(rot_vals[0], 10.0), -10.0)
+                roll = max(min(-rot_vals[1], 10.0), -10.0)
+                yawrate = max(min(-rot_vals[2], 100.0), -100.0)
+
+                linear = Vector3(pitch, roll, thrust)
+                angular = Vector3(0.0, 0.0, yawrate)
                 twist_fly = Twist(linear, angular)
 
             else:
                 twist_fly = self.twist_stop
 
             self.pub_cmd_vel.publish(twist_fly) # Publisher For CrazyFlie
+            self.pub_trajgen_states.publish(target_state)
             self.rate.sleep()
 
-            self.pub_trajgen_states.publish(target_state)
+
 
     def pid_rest_controller(self):
         self.pitchcontrol.reset()
@@ -220,12 +229,16 @@ class pid_controller:
         self.Kp = params['kp']
         self.Kd = params['kd']
         self.Ki = params['ki']
+
         self.integratorMin = params['integratorMin']
         self.integratorMax = params['integratorMax']
         self.minOutput = params['minOutput']
         self.maxOutput = params['maxOutput']
+        self.pub = rospy.Publisher('error' + direction, Float32, queue_size=10)
+
 
         # Initialize errors and integrals
+        self.previousMocap = 0.0
         self.integral = 0.0
         self.previousTime = rospy.get_time()
         self.previousError = 0.0
@@ -235,25 +248,28 @@ class pid_controller:
         time = rospy.get_time()
         dt = time - self.previousTime
         error = target - current
+        self.pub.publish(error)
         integral = self.integral + error*dt
         integral = max(min(integral, self.integratorMax), self.integratorMin)
         p = self.Kp * error
         d = 0.0
         if (dt>0):
-            d = self.Kd*(error - self.previousError) / dt
-
+            #d = self.Kd*(error - self.previousError) / dt
+            d = self.Kd*(self.previousMocap - current)/dt
         i = self.Ki*integral
+        self.previousMocap = current
         self.previousError = error
         self.previousTime = time
         self.integral = integral
         output = p+i+d
-        output = max(min(output, self.maxOutput), self.minOutput)
+        #output = max(min(output, self.maxOutput), self.minOutput)
         return output
 
     def reset(self):
         self.integral = 0.0
         self.previousError = 0.0
         self.previousTime = rospy.get_time()
+        self.previousMocap = 0.0
 
 """
         error_vel = self.target.vel - self.current.vel

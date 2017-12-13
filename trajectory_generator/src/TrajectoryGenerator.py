@@ -26,7 +26,7 @@ class TrajectoryGenerator(object):
         self.Q1 = 1             # Weight for the norm of distance between target and position
         self.Q2 = 15            # Weigth for the collision avoidance
         self.Q3 = [1,1,0.1]      # Weight factor each dimension of colllision avoidance
-        self.d1 = 0.3           # Distance a drone can move in each direction in a timestep [m]
+        self.d1 = [0.3, 0.3, 0.1]           # Distance a drone can move in each direction in a timestep [m]
         self.drones = drones
         self.N = len(drones)
         self.active_drones = []
@@ -119,12 +119,12 @@ class TrajectoryGenerator(object):
         for t in range(1,self.T+1):
             for d in self.active_drones_safe:
                 state = d.get_state()
-                boundaries.append(tuple([state[0]-t*self.d1,
-                                            state[0]+t*self.d1]))
-                boundaries.append(tuple([state[1]-t*self.d1,
-                                            state[1]+t*self.d1]))
-                boundaries.append(tuple([max(state[2]-t*self.d1,0),
-                                            max(state[2]+t*self.d1,self.d1)]))
+                boundaries.append(tuple([state[0]-t*self.d1[0],
+                                            state[0]+t*self.d1[0]]))
+                boundaries.append(tuple([state[1]-t*self.d1[1],
+                                            state[1]+t*self.d1[1]]))
+                boundaries.append(tuple([max(state[2]-t*self.d1[2],0),
+                                            max(state[2]+t*self.d1[2],self.d1[2])]))
         return boundaries
 
     def get_target_states(self):
@@ -321,8 +321,8 @@ if __name__ == '__main__':
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
         # Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
         # Drone('crazyflie1'),
-        Drone('crazyflie2'),
-        Drone('crazyflie3')
+        Drone('crazyflie4'),
+        Drone('crazyflie5')
     ]
     trajgen = TrajectoryGenerator(drones, 4)
     trajgen.calculate_multiple(100)
