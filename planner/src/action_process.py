@@ -15,12 +15,14 @@ class ActionProcess:
 	def __init__(self):
 		rospy.init_node('action_server')
 		self.action_dispatch = rospy.Subscriber('/kcl_rosplan/plan', CompletePlan, self.get_complete_plan)
+		self.pub_action_feedback = rospy.Publisher('/kcl_rosplan/action_feedback', ActionFeedback, queue_size=1)
 		self.pub_action_dictionary = rospy.Publisher('action_dictionary', action_dict, queue_size=1)
 		self.rate = rospy.Rate(1)
 		pickle_in = open("/home/el2425/catkin_ws/src/Drone_Project_2017-/planner/common/waypoints.pickle","rb")
 		self.name_wp = pickle.load(pickle_in)
 		self.start = 0
 		rospy.loginfo("Action Server Initilized")
+		self.action_feedback = {}
 
 
 	def get_complete_plan(self,data_plan):
@@ -33,6 +35,7 @@ class ActionProcess:
 			key = 'action_id_' + str(i)
 			Test_dict[key] = 0
 		rospy.set_param('completed_actions',Test_dict)
+		self.action_feedback = Test_dict
 		self.start = 1
 		rospy.loginfo("Fetched CompletePlan")
 
@@ -42,6 +45,14 @@ class ActionProcess:
 		Get_all_actions = rospy.get_param('completed_actions')
 		current_action_num = sum(Get_all_actions.values())
 		hold_dispatch = ActionDispatch
+		# Send action feedback
+		for i in range(0,self.NumberofActions):
+			if(Get_all_actions['action_id_' + str(i)] == 1):
+				if(self.action_feedback['action_id_' + str(i)] == 0):
+					self.pub_action_feedback.publish(ActionFeedback(i,'action acheieved',[]))
+					self.action_feedback['action_id_' + str(i)] = 1
+					rospy.sleep(0.01)
+
 		if(current_action_num != self.NumberofActions):
 			store_dispatchactions_numbers = self.action_dispatch_times == self.action_dispatch_times[current_action_num]
 			for i in range(0,len(store_dispatchactions_numbers)):

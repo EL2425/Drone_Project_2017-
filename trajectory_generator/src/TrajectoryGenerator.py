@@ -43,6 +43,14 @@ class TrajectoryGenerator(object):
         self.srv_add_traj = rospy.Service('add_drone_traj', AddDroneTraj, self.add_drone_traj)
         self.rate = rospy.Rate(5)
 
+        #Bounds of the Qualisys system
+        self.MIN_X = -1.5
+        self.MAX_X = 1.5
+        self.MIN_Y = -1.8
+        self.MAX_Y = 1.5
+        self.MIN_Z = 0
+        self.MAX_Z = 2
+
     def set_plan(self, data):
         for action in data.actionmessages:
             for d in self.drones:
@@ -119,12 +127,12 @@ class TrajectoryGenerator(object):
         for t in range(1,self.T+1):
             for d in self.active_drones_safe:
                 state = d.get_state()
-                boundaries.append(tuple([state[0]-t*self.d1[0],
-                                            state[0]+t*self.d1[0]]))
-                boundaries.append(tuple([state[1]-t*self.d1[1],
-                                            state[1]+t*self.d1[1]]))
-                boundaries.append(tuple([max(state[2]-t*self.d1[2],0),
-                                            max(state[2]+t*self.d1[2],self.d1[2])]))
+                boundaries.append(tuple([max(min(state[0]-t*self.d1[0],self.MAX_X-0.01),self.MIN_X),
+                                            max(min(state[0]+t*self.d1[0],self.MAX_X),self.MIN_X+0.01)]))
+                boundaries.append(tuple([max(min(state[1]-t*self.d1[1],self.MAX_Y-0.01),self.MIN_Y),
+                                            max(min(state[1]+t*self.d1[1],self.MAX_Y),self.MIN_Y+0.01)]))
+                boundaries.append(tuple([max(min(state[2]-t*self.d1[2],self.MAX_Z-0.01),self.MIN_Z),
+                                            max(min(state[2]+t*self.d1[2],self.MAX_Z),self.MIN_Z+0.01)]))
         return boundaries
 
     def get_target_states(self):
@@ -320,9 +328,12 @@ if __name__ == '__main__':
         # Drone("crazyflie1", -2, -2, 0, 2, 2, 1),
         # Drone("crazyflie2", 2, -2, 0, -2, 2, 1),
         # Drone('crazyflie3', 1.1, -2.5, 1, -0.5, 1.5, 1.2),
-        # Drone('crazyflie1'),
+        #Drone('crazyflie1'),
+        Drone('crazyflie2'),
+        Drone('crazyflie3'),
         Drone('crazyflie4'),
-        Drone('crazyflie5')
+        Drone('crazyflie5'),
+        #Drone('crazyflie6')
     ]
     trajgen = TrajectoryGenerator(drones, 4)
     trajgen.calculate_multiple(100)

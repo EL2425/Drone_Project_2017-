@@ -12,12 +12,7 @@
 
 
 <!-- Starting Group for each node -->
-  <!--
-  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
-    <arg name="tf_prefix" value="crazyflie1"/>
-    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A1"/>
-  </include>
--->
+
   <include file="$(find drone_controller)/launch/CrazyFlie.launch">
     <arg name="tf_prefix" value="crazyflie2"/>
     <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A2"/>
@@ -29,10 +24,20 @@
   </include>
 
   <include file="$(find drone_controller)/launch/CrazyFlie.launch">
+    <arg name="tf_prefix" value="crazyflie4"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A4"/>
+  </include>
+
+  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
+    <arg name="tf_prefix" value="crazyflie5"/>
+    <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A5"/>
+  </include>
+<!--
+  <include file="$(find drone_controller)/launch/CrazyFlie.launch">
     <arg name="tf_prefix" value="crazyflie6"/>
     <arg name="uri_drone" value="radio://0/90/2M/E7E7E7E7A6"/>
   </include>
-
+-->
   <node name="trajectory_generator"
         pkg="trajectory_generator"
         type="TrajectoryGenerator.py"
